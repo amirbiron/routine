@@ -3,7 +3,7 @@ services:
     name: routine-anchors
     runtime: node
     plan: starter
-    buildCommand: pnpm install && drizzle-kit push --force --verbose && pnpm build
+    buildCommand: pnpm install && node -e "const m=require('mysql2/promise');(async()=>{const c=await m.createConnection(process.env.DATABASE_URL);await c.query('ALTER TABLE users ADD UNIQUE INDEX users_email_unique (email)').catch(()=>{});await c.query('ALTER TABLE reminderSettings ADD UNIQUE INDEX reminderSettings_userId_unique (userId)').catch(()=>{});await c.end()})()" && drizzle-kit push --force && pnpm build
     startCommand: pnpm start
     envVars:
       - key: NODE_ENV
