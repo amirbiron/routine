@@ -1,9 +1,0 @@
-{
-  "query": "DELETE FROM activities WHERE title IN ('ארוחת בוקר', 'ארוחת צהריים', 'ארוחת ערב', 'נשימות עמוקות', 'מוזיקה רגועה', 'חיבוק דובי'); DELETE FROM activities WHERE userId = 1 AND title = 'Test';",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wPDFGq7cwT2bVX.ee3a58f9a19a --database fveF2PNSGDmyJwBo6KPe6C --execute DELETE FROM activities WHERE title IN ('ארוחת בוקר', 'ארוחת צהריים', 'ארוחת ערב', 'נשימות עמוקות', 'מוזיקה רגועה', 'חיבוק דובי'); DELETE FROM activities WHERE userId = 1 AND title = 'Test';",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1748
-}

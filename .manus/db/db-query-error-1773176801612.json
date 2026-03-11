@@ -1,8 +1,0 @@
-{
-  "query": "ALTER TABLE activities MODIFY COLUMN category ENUM('solo', 'social', 'movement', 'screens') NOT NULL DEFAULT 'solo';\nUPDATE activities SET category = 'solo' WHERE category NOT IN ('solo', 'social', 'movement', 'screens');",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wPDFGq7cwT2bVX.ee3a58f9a19a --database fveF2PNSGDmyJwBo6KPe6C --execute ALTER TABLE activities MODIFY COLUMN category ENUM('solo', 'social', 'movement', 'screens') NOT NULL DEFAULT 'solo';\nUPDATE activities SET category = 'solo' WHERE category NOT IN ('solo', 'social', 'movement', 'screens');",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1265 (01000) at line 1: Data truncated for column 'category', value is 'alone'"
-  ]
-}

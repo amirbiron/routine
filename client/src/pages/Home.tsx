@@ -69,12 +69,12 @@ export default function Home() {
               transition={{ delay: 0.3 }}
               className="mt-8"
             >
-              <a href={getLoginUrl()}>
+              <Link href={getLoginUrl()}>
                 <Button className="sketch-btn bg-sketch-coral text-white border-sketch-charcoal font-hand text-xl h-14 px-8">
                   <LogIn size={22} />
                   בואו נתחיל!
                 </Button>
-              </a>
+              </Link>
             </motion.div>
           )}
 

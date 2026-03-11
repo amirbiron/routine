@@ -18,7 +18,8 @@ function createAuthContext(overrides?: Partial<AuthenticatedUser>): { ctx: TrpcC
     openId: "test-user-123",
     email: "test@example.com",
     name: "Test User",
-    loginMethod: "manus",
+    loginMethod: "email",
+    passwordHash: null,
     role: "user",
     childName: null,
     onboardingDone: false,
@@ -87,7 +88,7 @@ describe("auth.logout", () => {
     expect(clearedCookies[0]?.options).toMatchObject({
       maxAge: -1,
       secure: true,
-      sameSite: "none",
+      sameSite: "lax",
       httpOnly: true,
       path: "/",
     });
