@@ -8,7 +8,12 @@ function initWebPush() {
     console.warn("[Push] VAPID keys not configured — push notifications disabled");
     return false;
   }
-  webpush.setVapidDetails(ENV.vapidEmail, ENV.vapidPublicKey, ENV.vapidPrivateKey);
+  try {
+    webpush.setVapidDetails(ENV.vapidEmail, ENV.vapidPublicKey, ENV.vapidPrivateKey);
+  } catch (err) {
+    console.error("[Push] Failed to initialize VAPID — push notifications disabled:", err);
+    return false;
+  }
   return true;
 }
 
@@ -132,9 +137,3 @@ export function startPushScheduler() {
   schedulerInterval = setInterval(checkReminders, 60_000);
 }
 
-export function stopPushScheduler() {
-  if (schedulerInterval) {
-    clearInterval(schedulerInterval);
-    schedulerInterval = null;
-  }
-}
