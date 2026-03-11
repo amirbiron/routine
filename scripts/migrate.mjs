@@ -52,9 +52,10 @@ for (const sql of statements) {
     await conn.query(sql);
     console.log(`OK: ${sql.slice(0, 60)}...`);
   } catch (e) {
-    // duplicate index / column already exists — תקין
-    if (e.code === "ER_DUP_KEYNAME" || e.code === "ER_DUP_FIELDNAME") {
-      console.log(`SKIP (already exists): ${sql.slice(0, 60)}...`);
+    // שגיאות צפויות — טבלה/עמודה/אינדקס כבר קיימים, או טבלה לא קיימת (fresh DB)
+    const expected = ["ER_DUP_KEYNAME", "ER_DUP_FIELDNAME", "ER_NO_SUCH_TABLE"];
+    if (expected.includes(e.code)) {
+      console.log(`SKIP (${e.code}): ${sql.slice(0, 60)}...`);
     } else {
       throw e;
     }
