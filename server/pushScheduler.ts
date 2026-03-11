@@ -15,6 +15,16 @@ function initWebPush() {
 // מניעת שליחה כפולה — מפתח: "userId:type", ערך: "YYYY-MM-DD HH:MM" האחרון שנשלח
 const lastSentMap = new Map<string, string>();
 
+/** ניקוי רשומות ישנות מה-map — שומר רק רשומות מהיום */
+function pruneLastSentMap() {
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  for (const [key, value] of lastSentMap) {
+    if (!value.startsWith(today)) {
+      lastSentMap.delete(key);
+    }
+  }
+}
+
 /** שליחת push ישירה לרשימת subscriptions */
 async function sendPushToSubscriptions(
   userId: number,
@@ -52,6 +62,7 @@ export async function sendPushToUser(userId: number, payload: { title: string; b
 /** בדיקה כל דקה — האם מישהו צריך לקבל תזכורת עכשיו */
 async function checkReminders() {
   try {
+    pruneLastSentMap();
     const usersWithReminders = await db.getUsersWithActiveReminders();
     if (usersWithReminders.length === 0) return;
 
@@ -63,7 +74,7 @@ async function checkReminders() {
           timeZone: setting.timezone,
           hour: "2-digit",
           minute: "2-digit",
-          hour12: false,
+          hourCycle: "h23",
         });
         const userDate = now.toLocaleDateString("en-CA", { timeZone: setting.timezone }); // YYYY-MM-DD
         const dedup = `${userDate} ${userTime}`;
