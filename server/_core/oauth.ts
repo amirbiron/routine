@@ -5,6 +5,41 @@ import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { hashPassword, verifyPassword, sdk } from "./sdk";
 
+// ─── Rate Limiting (in-memory) ─────────────────────────────────
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 דקות
+const MAX_ATTEMPTS = 10; // מקסימום ניסיונות בחלון זמן
+
+const attempts = new Map<string, { count: number; resetAt: number }>();
+
+/** ניקוי רשומות ישנות כל 5 דקות */
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of attempts) {
+    if (now > entry.resetAt) attempts.delete(key);
+  }
+}, 5 * 60 * 1000);
+
+function getRateLimitKey(req: Request): string {
+  // IP מ-proxy או ישירות
+  const forwarded = req.headers["x-forwarded-for"];
+  const ip = typeof forwarded === "string" ? forwarded.split(",")[0].trim() : req.ip ?? "unknown";
+  return ip;
+}
+
+/** בודק ומעדכן rate limit. מחזיר true אם חסום */
+function checkRateLimit(key: string): boolean {
+  const now = Date.now();
+  const entry = attempts.get(key);
+
+  if (!entry || now > entry.resetAt) {
+    attempts.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+
+  entry.count++;
+  return entry.count > MAX_ATTEMPTS;
+}
+
 const signupSchema = z.object({
   email: z.string().email().max(320),
   password: z.string().min(6).max(128),
@@ -20,6 +55,11 @@ export function registerAuthRoutes(app: Express) {
   // ─── Signup ────────────────────────────────────────────────────
   app.post("/api/auth/signup", async (req: Request, res: Response) => {
     try {
+      if (checkRateLimit(getRateLimitKey(req))) {
+        res.status(429).json({ error: "Too many attempts. Please try again later." });
+        return;
+      }
+
       const parsed = signupSchema.safeParse(req.body);
       if (!parsed.success) {
         res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
@@ -84,6 +124,11 @@ export function registerAuthRoutes(app: Express) {
   // ─── Login ─────────────────────────────────────────────────────
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
+      if (checkRateLimit(getRateLimitKey(req))) {
+        res.status(429).json({ error: "Too many attempts. Please try again later." });
+        return;
+      }
+
       const parsed = loginSchema.safeParse(req.body);
       if (!parsed.success) {
         res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
