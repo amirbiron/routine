@@ -2,7 +2,7 @@ services:
   - type: web
     name: routine-anchors
     runtime: node
-    plan: free
+    plan: starter
     buildCommand: pnpm install && pnpm db:push && pnpm build
     startCommand: pnpm start
     envVars:
