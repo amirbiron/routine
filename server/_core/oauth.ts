@@ -24,18 +24,23 @@ function getRateLimitKey(req: Request): string {
   return req.ip ?? "unknown";
 }
 
-/** בודק ומעדכן rate limit. מחזיר true אם חסום */
-function checkRateLimit(key: string): boolean {
+/** בודק rate limit. מחזיר true אם חסום. לא סופר — צריך לקרוא ל-recordFailedAttempt בנפרד */
+function isRateLimited(key: string): boolean {
   const now = Date.now();
   const entry = attempts.get(key);
+  if (!entry || now > entry.resetAt) return false;
+  return entry.count >= MAX_ATTEMPTS;
+}
 
+/** רישום ניסיון כושל בלבד */
+function recordFailedAttempt(key: string): void {
+  const now = Date.now();
+  const entry = attempts.get(key);
   if (!entry || now > entry.resetAt) {
     attempts.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return false;
+  } else {
+    entry.count++;
   }
-
-  entry.count++;
-  return entry.count > MAX_ATTEMPTS;
 }
 
 const signupSchema = z.object({
@@ -52,14 +57,16 @@ const loginSchema = z.object({
 export function registerAuthRoutes(app: Express) {
   // ─── Signup ────────────────────────────────────────────────────
   app.post("/api/auth/signup", async (req: Request, res: Response) => {
+    const rateLimitKey = getRateLimitKey(req);
     try {
-      if (checkRateLimit(getRateLimitKey(req))) {
+      if (isRateLimited(rateLimitKey)) {
         res.status(429).json({ error: "Too many attempts. Please try again later." });
         return;
       }
 
       const parsed = signupSchema.safeParse(req.body);
       if (!parsed.success) {
+        recordFailedAttempt(rateLimitKey);
         res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
         return;
       }
@@ -69,34 +76,21 @@ export function registerAuthRoutes(app: Express) {
 
       const passwordHash = await hashPassword(password);
       let userId: number | undefined;
-
-      // בדיקה אם קיים משתמש OAuth ישן בלי סיסמה — אם כן, נגדיר לו סיסמה
-      const existing = await db.getUserByEmail(email);
-      if (existing) {
-        if (existing.passwordHash) {
-          // משתמש עם סיסמה כבר קיים — לא ניתן להירשם שוב
+      try {
+        userId = await db.createUser({
+          email,
+          name,
+          passwordHash,
+          loginMethod: "email",
+        }) ?? undefined;
+      } catch (err: any) {
+        // אימייל כבר קיים (כולל משתמשי OAuth ישנים) — הודעה גנרית
+        if (err?.code === "ER_DUP_ENTRY" || err?.message?.includes("Duplicate")) {
+          recordFailedAttempt(rateLimitKey);
           res.status(409).json({ error: "Could not create account. Try logging in instead." });
           return;
         }
-        // משתמש OAuth ללא סיסמה — נאפשר הגדרת סיסמה
-        await db.setPasswordHash(existing.id, passwordHash);
-        userId = existing.id;
-      } else {
-        try {
-          userId = await db.createUser({
-            email,
-            name,
-            passwordHash,
-            loginMethod: "email",
-          }) ?? undefined;
-        } catch (err: any) {
-          // race condition — unique constraint על email
-          if (err?.code === "ER_DUP_ENTRY" || err?.message?.includes("Duplicate")) {
-            res.status(409).json({ error: "Could not create account. Try logging in instead." });
-            return;
-          }
-          throw err;
-        }
+        throw err;
       }
 
       if (!userId) {
@@ -121,14 +115,16 @@ export function registerAuthRoutes(app: Express) {
 
   // ─── Login ─────────────────────────────────────────────────────
   app.post("/api/auth/login", async (req: Request, res: Response) => {
+    const rateLimitKey = getRateLimitKey(req);
     try {
-      if (checkRateLimit(getRateLimitKey(req))) {
+      if (isRateLimited(rateLimitKey)) {
         res.status(429).json({ error: "Too many attempts. Please try again later." });
         return;
       }
 
       const parsed = loginSchema.safeParse(req.body);
       if (!parsed.success) {
+        recordFailedAttempt(rateLimitKey);
         res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
         return;
       }
@@ -138,6 +134,7 @@ export function registerAuthRoutes(app: Express) {
 
       const user = await db.getUserByEmail(email);
       if (!user || !user.passwordHash) {
+        recordFailedAttempt(rateLimitKey);
         res.status(401).json({ error: "Invalid email or password" });
         return;
       }
@@ -146,11 +143,13 @@ export function registerAuthRoutes(app: Express) {
       try {
         isValid = await verifyPassword(password, user.passwordHash);
       } catch {
+        recordFailedAttempt(rateLimitKey);
         res.status(401).json({ error: "Invalid email or password" });
         return;
       }
 
       if (!isValid) {
+        recordFailedAttempt(rateLimitKey);
         res.status(401).json({ error: "Invalid email or password" });
         return;
       }
