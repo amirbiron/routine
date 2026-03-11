@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { getLoginUrl } from "@/const";
 import { Link, useLocation } from "wouter";
-import { LogIn, LogOut, BookOpen, ArrowRight } from "lucide-react";
+import { LogIn, LogOut, BookOpen, ArrowRight, Bell } from "lucide-react";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "שגרה בחוסר שגרה",
@@ -11,6 +11,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/reflection": "שיחת ערב",
   "/tokens": "האסימונים שלי",
   "/parents": "מדריך להורים",
+  "/reminders": "תזכורות",
 };
 
 export function AppHeader() {
@@ -36,6 +37,11 @@ export function AppHeader() {
         <div className="flex items-center gap-1">
           {isAuthenticated && (
             <>
+              <Link href="/reminders">
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Bell size={16} />
+                </Button>
+              </Link>
               <Link href="/parents">
                 <Button variant="ghost" size="icon" className="h-8 w-8">
                   <BookOpen size={16} />

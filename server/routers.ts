@@ -4,6 +4,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import { ENV } from "./_core/env";
+import { sendPushToUser } from "./pushScheduler";
 
 const categoryEnum = z.enum(["solo", "social", "movement", "screens"]);
 const sectionEnum = z.enum(["morning", "afternoon", "evening"]);
@@ -221,6 +223,77 @@ export const appRouter = router({
       .input(z.object({ limit: z.number().default(20) }))
       .query(async ({ ctx, input }) => {
         return db.getTokenEvents(ctx.user.id, input.limit);
+      }),
+  }),
+
+  push: router({
+    // מחזיר את ה-VAPID public key לקליינט
+    vapidPublicKey: publicProcedure.query(() => {
+      return { key: ENV.vapidPublicKey };
+    }),
+
+    // שמירת push subscription
+    subscribe: protectedProcedure
+      .input(z.object({
+        endpoint: z.string().url(),
+        keys: z.object({
+          p256dh: z.string(),
+          auth: z.string(),
+        }),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.savePushSubscription(ctx.user.id, input);
+        return { success: true };
+      }),
+
+    // ביטול subscription
+    unsubscribe: protectedProcedure
+      .input(z.object({ endpoint: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deletePushSubscription(ctx.user.id, input.endpoint);
+        return { success: true };
+      }),
+
+    // שליחת push בדיקה
+    test: protectedProcedure.mutation(async ({ ctx }) => {
+      const results = await sendPushToUser(ctx.user.id, {
+        title: "בדיקה ✅",
+        body: "ההתראות עובדות! 🎉",
+        url: "/",
+        tag: "test",
+      });
+      return { results };
+    }),
+  }),
+
+  reminders: router({
+    // קבלת הגדרות תזכורות
+    get: protectedProcedure.query(async ({ ctx }) => {
+      const settings = await db.getReminderSettings(ctx.user.id);
+      return settings ?? {
+        morningEnabled: false,
+        morningTime: "08:00",
+        eveningEnabled: false,
+        eveningTime: "20:00",
+        timezone: "Asia/Jerusalem",
+      };
+    }),
+
+    // עדכון הגדרות תזכורות
+    update: protectedProcedure
+      .input(z.object({
+        morningEnabled: z.boolean().optional(),
+        morningTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
+        eveningEnabled: z.boolean().optional(),
+        eveningTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
+        timezone: z.string().refine((tz) => {
+          try { Intl.DateTimeFormat(undefined, { timeZone: tz }); return true; }
+          catch { return false; }
+        }, { message: "Invalid timezone" }).optional(),
+      }).refine((obj) => Object.keys(obj).length > 0, { message: "At least one field is required" }))
+      .mutation(async ({ ctx, input }) => {
+        await db.upsertReminderSettings(ctx.user.id, input);
+        return { success: true };
       }),
   }),
 });

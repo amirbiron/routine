@@ -68,6 +68,34 @@ export const reflections = mysqlTable("reflections", {
 export type Reflection = typeof reflections.$inferSelect;
 export type InsertReflection = typeof reflections.$inferInsert;
 
+// Push notification subscriptions
+export const pushSubscriptions = mysqlTable("pushSubscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
+
+// הגדרות תזכורות יומיות
+export const reminderSettings = mysqlTable("reminderSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  morningEnabled: boolean("morningEnabled").default(false).notNull(),
+  morningTime: varchar("morningTime", { length: 5 }).default("08:00").notNull(), // HH:MM
+  eveningEnabled: boolean("eveningEnabled").default(false).notNull(),
+  eveningTime: varchar("eveningTime", { length: 5 }).default("20:00").notNull(), // HH:MM
+  timezone: varchar("timezone", { length: 64 }).default("Asia/Jerusalem").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ReminderSettings = typeof reminderSettings.$inferSelect;
+export type InsertReminderSettings = typeof reminderSettings.$inferInsert;
+
 export const tokenEvents = mysqlTable("tokenEvents", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),

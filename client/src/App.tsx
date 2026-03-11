@@ -12,6 +12,7 @@ import ScheduleBuilder from "./pages/ScheduleBuilder";
 import Reflection from "./pages/Reflection";
 import Tokens from "./pages/Tokens";
 import ParentInfo from "./pages/ParentInfo";
+import Reminders from "./pages/Reminders";
 import Login from "./pages/Login";
 import { AppHeader } from "./components/AppHeader";
 import { BottomNav } from "./components/BottomNav";
@@ -55,6 +56,7 @@ function AppContent() {
           <Route path="/schedule" component={ScheduleBuilder} />
           <Route path="/reflection" component={Reflection} />
           <Route path="/tokens" component={Tokens} />
+          <Route path="/reminders" component={Reminders} />
           <Route path="/parents" component={ParentInfo} />
           <Route path="/404" component={NotFound} />
           <Route component={NotFound} />

@@ -6,6 +6,8 @@ import {
   schedules, InsertSchedule,
   reflections, InsertReflection,
   tokenEvents, InsertTokenEvent,
+  pushSubscriptions, InsertPushSubscription,
+  reminderSettings, InsertReminderSettings,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -190,4 +192,108 @@ export async function getTokenEvents(userId: number, limit: number = 20) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(tokenEvents).where(eq(tokenEvents.userId, userId)).orderBy(desc(tokenEvents.createdAt)).limit(limit);
+}
+
+// ─── Push Subscriptions ─────────────────────────────────────
+export async function savePushSubscription(userId: number, subscription: { endpoint: string; keys: { p256dh: string; auth: string } }) {
+  const db = await getDb();
+  if (!db) return null;
+  // מחיקת subscription ישן עם אותו endpoint
+  await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, subscription.endpoint));
+  const result = await db.insert(pushSubscriptions).values({
+    userId,
+    endpoint: subscription.endpoint,
+    p256dh: subscription.keys.p256dh,
+    auth: subscription.keys.auth,
+  });
+  return result[0].insertId;
+}
+
+export async function deletePushSubscription(userId: number, endpoint: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(pushSubscriptions).where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.endpoint, endpoint)));
+}
+
+export async function getPushSubscriptions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+}
+
+// ─── Reminder Settings ──────────────────────────────────────
+export async function getReminderSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(reminderSettings).where(eq(reminderSettings.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function upsertReminderSettings(userId: number, data: {
+  morningEnabled?: boolean;
+  morningTime?: string;
+  eveningEnabled?: boolean;
+  eveningTime?: string;
+  timezone?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  // אטומי — ON DUPLICATE KEY UPDATE מונע race condition ושורות כפולות
+  const result = await db.insert(reminderSettings)
+    .values({ userId, ...data })
+    .onDuplicateKeyUpdate({ set: data });
+  return result[0].insertId;
+}
+
+/** מחזיר את כל המשתמשים שיש להם תזכורת פעילה עם ה-subscriptions שלהם (שאילתה אחת) */
+export async function getUsersWithActiveReminders() {
+  const db = await getDb();
+  if (!db) return [];
+  // JOIN בין reminderSettings ל-pushSubscriptions — שאילתה אחת במקום N+1
+  const rows = await db
+    .select({
+      settingId: reminderSettings.id,
+      userId: reminderSettings.userId,
+      morningEnabled: reminderSettings.morningEnabled,
+      morningTime: reminderSettings.morningTime,
+      eveningEnabled: reminderSettings.eveningEnabled,
+      eveningTime: reminderSettings.eveningTime,
+      timezone: reminderSettings.timezone,
+      subEndpoint: pushSubscriptions.endpoint,
+      subP256dh: pushSubscriptions.p256dh,
+      subAuth: pushSubscriptions.auth,
+    })
+    .from(reminderSettings)
+    .innerJoin(pushSubscriptions, eq(reminderSettings.userId, pushSubscriptions.userId));
+
+  // קיבוץ לפי userId
+  const grouped = new Map<number, {
+    setting: { id: number; userId: number; morningEnabled: boolean; morningTime: string; eveningEnabled: boolean; eveningTime: string; timezone: string };
+    subscriptions: { endpoint: string; p256dh: string; auth: string }[];
+  }>();
+
+  for (const row of rows) {
+    if (!row.morningEnabled && !row.eveningEnabled) continue;
+    if (!grouped.has(row.userId)) {
+      grouped.set(row.userId, {
+        setting: {
+          id: row.settingId,
+          userId: row.userId,
+          morningEnabled: row.morningEnabled,
+          morningTime: row.morningTime,
+          eveningEnabled: row.eveningEnabled,
+          eveningTime: row.eveningTime,
+          timezone: row.timezone,
+        },
+        subscriptions: [],
+      });
+    }
+    grouped.get(row.userId)!.subscriptions.push({
+      endpoint: row.subEndpoint,
+      p256dh: row.subP256dh,
+      auth: row.subAuth,
+    });
+  }
+
+  return Array.from(grouped.values());
 }
