@@ -1,0 +1,27 @@
+# Project TODO - שגרה בחוסר שגרה
+
+- [x] Hebrew RTL interface with mobile-first responsive design
+- [x] Hand-drawn sketch aesthetic design system (cream paper, charcoal lines, imperfect shapes)
+- [x] Google Fonts integration (marker-style + monospaced typewriter)
+- [x] Onboarding flow with child-friendly introduction
+- [x] Activity bank management (create, edit, categorize with icons/colors)
+- [x] Drag-and-drop daily schedule builder
+- [x] Evening reflection interface for children
+- [x] Token economy system with celebration animations
+- [x] Parent information page (routine anchors psychology)
+- [x] Printable schedule export
+- [x] User authentication integration
+- [x] Database schema (profiles, activity banks, schedules, reflections, tokens)
+- [x] tRPC API routes for all features
+- [x] Vitest unit tests
+- [x] Change activity categories to: עם עצמי, עם משפחה/חברים, בתנועה, עם מסכים
+- [x] Add confetti/celebration animations when completing all daily activities or earning tokens
+- [x] Add daily reminder notifications (morning/evening) - using notifyOwner helper for owner notifications
+- [x] Split schedule into 3 meal-based time sections (morning, afternoon, evening) with drag-and-drop per section
+- [x] Update print layout to fit all 3 sections on one page (side-by-side columns)
+- [x] Add "Screen Time" info box to Parent Info page below the unsupervised section
+- [x] Bug: Remove meal activities (ארוחת בוקר/צהריים/ערב) from activity bank defaults - they are section dividers not activities
+- [x] Bug: Rename schedule sections from "בוקר - לפני ארוחת צהריים" etc. to "ארוחת בוקר", "ארוחת צהריים", "ארוחת ערב"
+- [x] Bug: Default activities showing "Test" for non-admin users instead of real activity names
+- [x] Bug: Date/day not updating after midnight - fixed to use Israel timezone (Asia/Jerusalem)
+- [x] Bug: Client-side exception - added defensive error handling, null-safe checks, iOS safe-area, viewport-fit=cover
