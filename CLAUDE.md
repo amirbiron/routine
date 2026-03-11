@@ -23,3 +23,26 @@ Interactive tool for building daily routine anchors for children during uncertai
 - `client/` — React SPA (pages, components, hooks)
 - `shared/` — Constants and types shared between server/client
 - `drizzle/` — DB schema and SQL migrations
+
+## Changelog Requirement (IMPORTANT)
+
+After completing **every task** that modifies code, you **MUST** update `CHANGELOG.md` at the root of the repo.
+
+### Rules:
+1. Add a new entry at the **top** of the changelog (newest first), under the current date heading
+2. Each entry must include:
+   - **What changed** — short Hebrew description of the change
+   - **Files** — list of every file that was added, modified, or deleted
+   - **Details** — concise technical summary in Hebrew of what was done and why
+3. If the date heading already exists, add the entry under it. Otherwise create a new date heading
+4. Never delete or modify existing entries
+5. Write the changelog in **Hebrew** — this file will be handed to another AI (Manus) for re-implementation on the original codebase
+
+### Format:
+```markdown
+## [YYYY-MM-DD]
+
+### <short title in Hebrew>
+**קבצים:** `file1.ts`, `file2.tsx`, ...
+**פירוט:** <technical description in Hebrew of what changed, why, and any important implementation details>
+```
