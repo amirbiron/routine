@@ -12,18 +12,20 @@ function initWebPush() {
   return true;
 }
 
-/** שליחת push notification למשתמש */
-export async function sendPushToUser(userId: number, payload: { title: string; body: string; url?: string; tag?: string }) {
-  const subscriptions = await db.getPushSubscriptions(userId);
-  const results = [];
+// מניעת שליחה כפולה — מפתח: "userId:type", ערך: "HH:MM" האחרון שנשלח
+const lastSentMap = new Map<string, string>();
 
+/** שליחת push ישירה לרשימת subscriptions */
+async function sendPushToSubscriptions(
+  userId: number,
+  subscriptions: { endpoint: string; p256dh: string; auth: string }[],
+  payload: { title: string; body: string; url?: string; tag?: string }
+) {
+  const results = [];
   for (const sub of subscriptions) {
     try {
       await webpush.sendNotification(
-        {
-          endpoint: sub.endpoint,
-          keys: { p256dh: sub.p256dh, auth: sub.auth },
-        },
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
         JSON.stringify(payload)
       );
       results.push({ endpoint: sub.endpoint, success: true });
@@ -39,6 +41,12 @@ export async function sendPushToUser(userId: number, payload: { title: string; b
     }
   }
   return results;
+}
+
+/** שליחת push notification למשתמש (לשימוש ב-tRPC routes — בדיקה ידנית וכו') */
+export async function sendPushToUser(userId: number, payload: { title: string; body: string; url?: string; tag?: string }) {
+  const subscriptions = await db.getPushSubscriptions(userId);
+  return sendPushToSubscriptions(userId, subscriptions, payload);
 }
 
 /** בדיקה כל דקה — האם מישהו צריך לקבל תזכורת עכשיו */
@@ -59,22 +67,30 @@ async function checkReminders() {
 
       // בדיקת תזכורת בוקר
       if (setting.morningEnabled && userTime === setting.morningTime) {
-        await sendPushToUser(setting.userId, {
-          title: "בוקר טוב! ☀️",
-          body: "בואו נתכנן את סדר היום של היום",
-          url: "/schedule",
-          tag: "morning-reminder",
-        });
+        const key = `${setting.userId}:morning`;
+        if (lastSentMap.get(key) !== userTime) {
+          await sendPushToSubscriptions(setting.userId, subscriptions, {
+            title: "בוקר טוב! ☀️",
+            body: "בואו נתכנן את סדר היום של היום",
+            url: "/schedule",
+            tag: "morning-reminder",
+          });
+          lastSentMap.set(key, userTime);
+        }
       }
 
       // בדיקת תזכורת ערב
       if (setting.eveningEnabled && userTime === setting.eveningTime) {
-        await sendPushToUser(setting.userId, {
-          title: "שיחת ערב 🌙",
-          body: "הגיע הזמן לשיחת סיכום יום",
-          url: "/reflection",
-          tag: "evening-reminder",
-        });
+        const key = `${setting.userId}:evening`;
+        if (lastSentMap.get(key) !== userTime) {
+          await sendPushToSubscriptions(setting.userId, subscriptions, {
+            title: "שיחת ערב 🌙",
+            body: "הגיע הזמן לשיחת סיכום יום",
+            url: "/reflection",
+            tag: "evening-reminder",
+          });
+          lastSentMap.set(key, userTime);
+        }
       }
     }
   } catch (err) {
