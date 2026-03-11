@@ -8,6 +8,10 @@
 
 ## [2026-03-11]
 
+### תיקון race condition ב-mutations של תזכורות והסרת קוד מת
+**קבצים:** `client/src/pages/Reminders.tsx`, `server/pushScheduler.ts`
+**פירוט:** (1) ב-`handleMorningTimeChange` ו-`handleEveningTimeChange` — ה-mutation שלח רק את השעה בלי `enabled`, מה שגרם ל-race condition עם mutation של toggle. עכשיו שולחים גם `morningEnabled`/`eveningEnabled` כדי שה-upsert ישמור את כל השדות הרלוונטיים גם אם הבקשות מגיעות בסדר שונה. (2) הסרת משתנה `schedulerInterval` שהפך לקוד מת אחרי הסרת `stopPushScheduler`.
+
 ### תיקון קריסת שרת ב-initWebPush והסרת קוד מת
 **קבצים:** `server/pushScheduler.ts`
 **פירוט:** (1) עטיפת `webpush.setVapidDetails` ב-try-catch — מפתחות VAPID פגומים גרמו ל-exception לא נתפס שהפיל את כל השרת. עכשיו push notifications מושבתות בחינניות והשרת ממשיך לעבוד. (2) הסרת `stopPushScheduler` — פונקציה שלא נקראה מאף מקום בקוד.

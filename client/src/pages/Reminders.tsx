@@ -82,14 +82,14 @@ export default function Reminders() {
   const handleMorningTimeChange = (time: string) => {
     setMorningTime(time);
     if (morningEnabled) {
-      updateMutation.mutate({ morningTime: time, timezone: userTimezone });
+      updateMutation.mutate({ morningEnabled, morningTime: time, timezone: userTimezone });
     }
   };
 
   const handleEveningTimeChange = (time: string) => {
     setEveningTime(time);
     if (eveningEnabled) {
-      updateMutation.mutate({ eveningTime: time, timezone: userTimezone });
+      updateMutation.mutate({ eveningEnabled, eveningTime: time, timezone: userTimezone });
     }
   };
 

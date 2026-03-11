@@ -123,8 +123,6 @@ async function checkReminders() {
   }
 }
 
-let schedulerInterval: ReturnType<typeof setInterval> | null = null;
-
 /** הפעלת ה-scheduler — בודק כל 60 שניות */
 export function startPushScheduler() {
   const ready = initWebPush();
@@ -134,6 +132,6 @@ export function startPushScheduler() {
   // בדיקה ראשונה מיידית
   checkReminders();
   // ואז כל דקה
-  schedulerInterval = setInterval(checkReminders, 60_000);
+  setInterval(checkReminders, 60_000);
 }
 
