@@ -28,6 +28,14 @@ Interactive tool for building daily routine anchors for children during uncertai
 
 After completing **every task** that modifies code, you **MUST** update `CHANGELOG.md` at the root of the repo.
 
+### What to log:
+- Feature additions, UI changes, bug fixes, schema changes, new pages/components, logic changes
+- Anything that Manus would need to replicate on its original codebase
+
+### What NOT to log:
+- Infrastructure changes specific to the Render migration (render.yaml, auth system swap, Manus plugin removal)
+- Changes to CLAUDE.md, CHANGELOG.md itself, test fixtures, or dev tooling
+
 ### Rules:
 1. Add a new entry at the **top** of the changelog (newest first), under the current date heading
 2. Each entry must include:
