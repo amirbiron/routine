@@ -26,7 +26,8 @@ export function registerAuthRoutes(app: Express) {
         return;
       }
 
-      const { email, password, name } = parsed.data;
+      const { password, name } = parsed.data;
+      const email = parsed.data.email.toLowerCase();
 
       const passwordHash = await hashPassword(password);
       let userId: number | undefined;
@@ -75,7 +76,8 @@ export function registerAuthRoutes(app: Express) {
         return;
       }
 
-      const { email, password } = parsed.data;
+      const { password } = parsed.data;
+      const email = parsed.data.email.toLowerCase();
 
       const user = await db.getUserByEmail(email);
       if (!user || !user.passwordHash) {
