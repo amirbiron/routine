@@ -79,6 +79,13 @@ export async function touchLastSignedIn(userId: number) {
   await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, userId));
 }
 
+/** עדכון סיסמה למשתמש קיים (למשל משתמש OAuth שעובר לסיסמה) */
+export async function setPasswordHash(userId: number, passwordHash: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+}
+
 export async function updateUserProfile(userId: number, data: { childName?: string; onboardingDone?: boolean }) {
   const db = await getDb();
   if (!db) return;

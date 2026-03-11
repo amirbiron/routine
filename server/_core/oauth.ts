@@ -31,20 +31,34 @@ export function registerAuthRoutes(app: Express) {
 
       const passwordHash = await hashPassword(password);
       let userId: number | undefined;
-      try {
-        userId = await db.createUser({
-          email,
-          name,
-          passwordHash,
-          loginMethod: "email",
-        });
-      } catch (err: any) {
-        // unique constraint על email — גם אם שני בקשות הגיעו במקביל
-        if (err?.code === "ER_DUP_ENTRY" || err?.message?.includes("Duplicate")) {
+
+      // בדיקה אם קיים משתמש OAuth ישן בלי סיסמה — אם כן, נגדיר לו סיסמה
+      const existing = await db.getUserByEmail(email);
+      if (existing) {
+        if (existing.passwordHash) {
+          // משתמש עם סיסמה כבר קיים — לא ניתן להירשם שוב
           res.status(409).json({ error: "Could not create account. Try logging in instead." });
           return;
         }
-        throw err;
+        // משתמש OAuth ללא סיסמה — נאפשר הגדרת סיסמה
+        await db.setPasswordHash(existing.id, passwordHash);
+        userId = existing.id;
+      } else {
+        try {
+          userId = await db.createUser({
+            email,
+            name,
+            passwordHash,
+            loginMethod: "email",
+          }) ?? undefined;
+        } catch (err: any) {
+          // race condition — unique constraint על email
+          if (err?.code === "ER_DUP_ENTRY" || err?.message?.includes("Duplicate")) {
+            res.status(409).json({ error: "Could not create account. Try logging in instead." });
+            return;
+          }
+          throw err;
+        }
       }
 
       if (!userId) {
