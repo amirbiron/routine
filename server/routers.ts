@@ -283,9 +283,9 @@ export const appRouter = router({
     update: protectedProcedure
       .input(z.object({
         morningEnabled: z.boolean().optional(),
-        morningTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+        morningTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
         eveningEnabled: z.boolean().optional(),
-        eveningTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+        eveningTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
         timezone: z.string().refine((tz) => {
           try { Intl.DateTimeFormat(undefined, { timeZone: tz }); return true; }
           catch { return false; }
