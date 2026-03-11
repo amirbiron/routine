@@ -56,16 +56,17 @@ async function checkReminders() {
     if (usersWithReminders.length === 0) return;
 
     for (const { setting, subscriptions } of usersWithReminders) {
-      // חישוב השעה והתאריך הנוכחיים ב-timezone של המשתמש
-      const now = new Date();
-      const userTime = now.toLocaleTimeString("en-GB", {
-        timeZone: setting.timezone,
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-      const userDate = now.toLocaleDateString("en-CA", { timeZone: setting.timezone }); // YYYY-MM-DD
-      const dedup = `${userDate} ${userTime}`;
+      try {
+        // חישוב השעה והתאריך הנוכחיים ב-timezone של המשתמש
+        const now = new Date();
+        const userTime = now.toLocaleTimeString("en-GB", {
+          timeZone: setting.timezone,
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        });
+        const userDate = now.toLocaleDateString("en-CA", { timeZone: setting.timezone }); // YYYY-MM-DD
+        const dedup = `${userDate} ${userTime}`;
 
       // בדיקת תזכורת בוקר
       if (setting.morningEnabled && userTime === setting.morningTime) {
@@ -93,6 +94,9 @@ async function checkReminders() {
           });
           lastSentMap.set(key, dedup);
         }
+      }
+      } catch (userErr) {
+        console.error(`[Push] Error processing reminders for user ${setting.userId}:`, userErr);
       }
     }
   } catch (err) {

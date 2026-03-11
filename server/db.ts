@@ -247,20 +247,55 @@ export async function upsertReminderSettings(userId: number, data: {
   return result[0].insertId;
 }
 
-/** מחזיר את כל המשתמשים שיש להם תזכורת פעילה עם ה-subscriptions שלהם */
+/** מחזיר את כל המשתמשים שיש להם תזכורת פעילה עם ה-subscriptions שלהם (שאילתה אחת) */
 export async function getUsersWithActiveReminders() {
   const db = await getDb();
   if (!db) return [];
-  // שליפת כל ההגדרות — סינון בקוד כי OR על booleans פשוט יותר כאן
-  const settings = await db.select().from(reminderSettings);
-  const active = settings.filter(s => s.morningEnabled || s.eveningEnabled);
-  // לכל משתמש פעיל, נביא את ה-push subscriptions
-  const result = [];
-  for (const setting of active) {
-    const subs = await getPushSubscriptions(setting.userId);
-    if (subs.length > 0) {
-      result.push({ setting, subscriptions: subs });
+  // JOIN בין reminderSettings ל-pushSubscriptions — שאילתה אחת במקום N+1
+  const rows = await db
+    .select({
+      settingId: reminderSettings.id,
+      userId: reminderSettings.userId,
+      morningEnabled: reminderSettings.morningEnabled,
+      morningTime: reminderSettings.morningTime,
+      eveningEnabled: reminderSettings.eveningEnabled,
+      eveningTime: reminderSettings.eveningTime,
+      timezone: reminderSettings.timezone,
+      subEndpoint: pushSubscriptions.endpoint,
+      subP256dh: pushSubscriptions.p256dh,
+      subAuth: pushSubscriptions.auth,
+    })
+    .from(reminderSettings)
+    .innerJoin(pushSubscriptions, eq(reminderSettings.userId, pushSubscriptions.userId));
+
+  // קיבוץ לפי userId
+  const grouped = new Map<number, {
+    setting: { id: number; userId: number; morningEnabled: boolean; morningTime: string; eveningEnabled: boolean; eveningTime: string; timezone: string };
+    subscriptions: { endpoint: string; p256dh: string; auth: string }[];
+  }>();
+
+  for (const row of rows) {
+    if (!row.morningEnabled && !row.eveningEnabled) continue;
+    if (!grouped.has(row.userId)) {
+      grouped.set(row.userId, {
+        setting: {
+          id: row.settingId,
+          userId: row.userId,
+          morningEnabled: row.morningEnabled,
+          morningTime: row.morningTime,
+          eveningEnabled: row.eveningEnabled,
+          eveningTime: row.eveningTime,
+          timezone: row.timezone,
+        },
+        subscriptions: [],
+      });
     }
+    grouped.get(row.userId)!.subscriptions.push({
+      endpoint: row.subEndpoint,
+      p256dh: row.subP256dh,
+      auth: row.subAuth,
+    });
   }
-  return result;
+
+  return Array.from(grouped.values());
 }
