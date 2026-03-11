@@ -1,9 +1,0 @@
-{
-  "query": "UPDATE activities SET category = 'solo' WHERE category IN ('alone', 'calming', 'room', 'custom');\nUPDATE activities SET category = 'social' WHERE category = 'together';\nUPDATE activities SET category = 'movement' WHERE category = 'body';\nALTER TABLE activities MODIFY COLUMN category ENUM('solo', 'social', 'movement', 'screens') NOT NULL DEFAULT 'solo';",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wPDFGq7cwT2bVX.ee3a58f9a19a --database fveF2PNSGDmyJwBo6KPe6C --execute UPDATE activities SET category = 'solo' WHERE category IN ('alone', 'calming', 'room', 'custom');\nUPDATE activities SET category = 'social' WHERE category = 'together';\nUPDATE activities SET category = 'movement' WHERE category = 'body';\nALTER TABLE activities MODIFY COLUMN category ENUM('solo', 'social', 'movement', 'screens') NOT NULL DEFAULT 'solo';",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 2732
-}

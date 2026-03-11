@@ -106,5 +106,7 @@ temp/
 *.sqlite
 *.sqlite3
 
-# Webdev artifacts (checkpoint zips, migrations, etc.)
+# Manus artifacts (legacy)
+.manus/
+.manus-logs/
 .webdev/

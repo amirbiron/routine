@@ -12,6 +12,7 @@ import ScheduleBuilder from "./pages/ScheduleBuilder";
 import Reflection from "./pages/Reflection";
 import Tokens from "./pages/Tokens";
 import ParentInfo from "./pages/ParentInfo";
+import Login from "./pages/Login";
 import { AppHeader } from "./components/AppHeader";
 import { BottomNav } from "./components/BottomNav";
 import { trpc } from "./lib/trpc";
@@ -49,6 +50,7 @@ function AppContent() {
       <main className="pb-16">
         <Switch>
           <Route path="/" component={Home} />
+          <Route path="/login" component={Login} />
           <Route path="/activities" component={ActivityBank} />
           <Route path="/schedule" component={ScheduleBuilder} />
           <Route path="/reflection" component={Reflection} />

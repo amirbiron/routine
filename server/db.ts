@@ -7,14 +7,23 @@ import {
   reflections, InsertReflection,
   tokenEvents, InsertTokenEvent,
 } from "../drizzle/schema";
-import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+
+function getDbUrl(): string {
+  const url = process.env.DATABASE_URL ?? "";
+  // Auto-add SSL for cloud databases (TiDB, PlanetScale, etc.)
+  if (url && !url.includes("localhost") && !url.includes("127.0.0.1") && !url.includes("ssl=")) {
+    const separator = url.includes("?") ? "&" : "?";
+    return `${url}${separator}ssl={"rejectUnauthorized":true}`;
+  }
+  return url;
+}
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      _db = drizzle(getDbUrl());
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -24,44 +33,57 @@ export async function getDb() {
 }
 
 // ─── Users ───────────────────────────────────────────────────
-export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) throw new Error("User openId is required for upsert");
-  const db = await getDb();
-  if (!db) { console.warn("[Database] Cannot upsert user: database not available"); return; }
 
-  try {
-    const values: InsertUser = { openId: user.openId };
-    const updateSet: Record<string, unknown> = {};
-
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) { values.lastSignedIn = user.lastSignedIn; updateSet.lastSignedIn = user.lastSignedIn; }
-    if (user.role !== undefined) { values.role = user.role; updateSet.role = user.role; }
-    else if (user.openId === ENV.ownerOpenId) { values.role = 'admin'; updateSet.role = 'admin'; }
-    if (!values.lastSignedIn) values.lastSignedIn = new Date();
-    if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
-  }
+/** Strip passwordHash from user object before returning to client */
+export function sanitizeUser(user: typeof users.$inferSelect) {
+  const { passwordHash, ...safe } = user;
+  return safe;
 }
 
-export async function getUserByOpenId(openId: string) {
+export async function createUser(data: {
+  email: string;
+  name: string;
+  passwordHash: string;
+  loginMethod: string;
+}): Promise<number | null> {
+  const db = await getDb();
+  if (!db) { console.warn("[Database] Cannot create user: database not available"); return null; }
+
+  const result = await db.insert(users).values({
+    email: data.email,
+    name: data.name,
+    passwordHash: data.passwordHash,
+    loginMethod: data.loginMethod,
+    lastSignedIn: new Date(),
+  });
+  return result[0].insertId;
+}
+
+export async function getUserByEmail(email: string) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function touchLastSignedIn(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, userId));
+}
+
+/** עדכון סיסמה ו-loginMethod למשתמש קיים (למשל משתמש OAuth שעובר לסיסמה). זורק שגיאה אם DB לא זמין */
+export async function setPasswordHash(userId: number, passwordHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ passwordHash, loginMethod: "email" }).where(eq(users.id, userId));
 }
 
 export async function updateUserProfile(userId: number, data: { childName?: string; onboardingDone?: boolean }) {

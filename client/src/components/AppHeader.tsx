@@ -47,12 +47,12 @@ export function AppHeader() {
             </>
           )}
           {!isAuthenticated && (
-            <a href={getLoginUrl()}>
+            <Link href={getLoginUrl()}>
               <Button variant="ghost" size="sm" className="font-hand text-base">
                 <LogIn size={16} />
                 כניסה
               </Button>
-            </a>
+            </Link>
           )}
         </div>
       </div>

@@ -15,6 +15,13 @@
       "when": 1773169985669,
       "tag": "0001_swift_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1741689600000,
+      "tag": "0002_add_password_hash",
+      "breakpoints": true
     }
   ]
 }
