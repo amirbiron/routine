@@ -30,6 +30,7 @@ export default function Reminders() {
   const [morningTime, setMorningTime] = useState("08:00");
   const [eveningEnabled, setEveningEnabled] = useState(false);
   const [eveningTime, setEveningTime] = useState("20:00");
+  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   // טעינת הגדרות קיימות
   useEffect(() => {
@@ -52,7 +53,7 @@ export default function Reminders() {
       }
     }
     setMorningEnabled(newVal);
-    updateMutation.mutate({ morningEnabled: newVal, morningTime });
+    updateMutation.mutate({ morningEnabled: newVal, morningTime, timezone: userTimezone });
   };
 
   const handleToggleEvening = async () => {
@@ -65,20 +66,20 @@ export default function Reminders() {
       }
     }
     setEveningEnabled(newVal);
-    updateMutation.mutate({ eveningEnabled: newVal, eveningTime });
+    updateMutation.mutate({ eveningEnabled: newVal, eveningTime, timezone: userTimezone });
   };
 
   const handleMorningTimeChange = (time: string) => {
     setMorningTime(time);
     if (morningEnabled) {
-      updateMutation.mutate({ morningTime: time });
+      updateMutation.mutate({ morningTime: time, timezone: userTimezone });
     }
   };
 
   const handleEveningTimeChange = (time: string) => {
     setEveningTime(time);
     if (eveningEnabled) {
-      updateMutation.mutate({ eveningTime: time });
+      updateMutation.mutate({ eveningTime: time, timezone: userTimezone });
     }
   };
 

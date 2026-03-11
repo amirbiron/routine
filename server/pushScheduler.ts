@@ -12,7 +12,7 @@ function initWebPush() {
   return true;
 }
 
-// מניעת שליחה כפולה — מפתח: "userId:type", ערך: "HH:MM" האחרון שנשלח
+// מניעת שליחה כפולה — מפתח: "userId:type", ערך: "YYYY-MM-DD HH:MM" האחרון שנשלח
 const lastSentMap = new Map<string, string>();
 
 /** שליחת push ישירה לרשימת subscriptions */
@@ -56,7 +56,7 @@ async function checkReminders() {
     if (usersWithReminders.length === 0) return;
 
     for (const { setting, subscriptions } of usersWithReminders) {
-      // חישוב השעה הנוכחית ב-timezone של המשתמש
+      // חישוב השעה והתאריך הנוכחיים ב-timezone של המשתמש
       const now = new Date();
       const userTime = now.toLocaleTimeString("en-GB", {
         timeZone: setting.timezone,
@@ -64,32 +64,34 @@ async function checkReminders() {
         minute: "2-digit",
         hour12: false,
       });
+      const userDate = now.toLocaleDateString("en-CA", { timeZone: setting.timezone }); // YYYY-MM-DD
+      const dedup = `${userDate} ${userTime}`;
 
       // בדיקת תזכורת בוקר
       if (setting.morningEnabled && userTime === setting.morningTime) {
         const key = `${setting.userId}:morning`;
-        if (lastSentMap.get(key) !== userTime) {
+        if (lastSentMap.get(key) !== dedup) {
           await sendPushToSubscriptions(setting.userId, subscriptions, {
             title: "בוקר טוב! ☀️",
             body: "בואו נתכנן את סדר היום של היום",
             url: "/schedule",
             tag: "morning-reminder",
           });
-          lastSentMap.set(key, userTime);
+          lastSentMap.set(key, dedup);
         }
       }
 
       // בדיקת תזכורת ערב
       if (setting.eveningEnabled && userTime === setting.eveningTime) {
         const key = `${setting.userId}:evening`;
-        if (lastSentMap.get(key) !== userTime) {
+        if (lastSentMap.get(key) !== dedup) {
           await sendPushToSubscriptions(setting.userId, subscriptions, {
             title: "שיחת ערב 🌙",
             body: "הגיע הזמן לשיחת סיכום יום",
             url: "/reflection",
             tag: "evening-reminder",
           });
-          lastSentMap.set(key, userTime);
+          lastSentMap.set(key, dedup);
         }
       }
     }
