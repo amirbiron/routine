@@ -8,6 +8,10 @@
 
 ## [2026-03-11]
 
+### תיקוני באגים נוספים — push notifications ו-reminder settings
+**קבצים:** `server/pushScheduler.ts`, `client/src/_core/hooks/usePushNotifications.ts`, `drizzle/schema.ts`, `server/db.ts`
+**פירוט:** שלושה תיקונים: (1) פונקציית pruneLastSentMap השתמשה בתאריך UTC של השרת, אבל הערכים ב-map נשמרו בתאריך המקומי של המשתמש — עכשיו שומרים רשומות מהיום ומאתמול כדי למנוע מחיקה מוקדמת עבור משתמשים ב-timezone מקדים ל-UTC. (2) ב-usePushNotifications, סגירת דיאלוג ההרשאות בלי בחירה (permission="default") סימנה בטעות "denied" — עכשיו מבחינים בין "denied" ל-"default" כך שהמשתמש יכול לנסות שוב. (3) הוספת unique constraint על userId בטבלת reminderSettings והחלפת ה-upsert הלא-אטומי (select-then-insert) ב-onDuplicateKeyUpdate אטומי למניעת שורות כפולות ב-race condition.
+
 ### תיקון באגים ב-pushScheduler
 **קבצים:** `server/pushScheduler.ts`
 **פירוט:** שני תיקונים: (1) החלפת `hour12: false` ב-`hourCycle: "h23"` בפורמט השעה — מונע מצב שבו חצות מוצגת כ-"24:00" במקום "00:00" בחלק ממימושי Node.js/ICU, מה שגרם לכך שתזכורות שנקבעו לחצות לא נשלחו. (2) הוספת פונקציית `pruneLastSentMap` שמנקה רשומות ישנות מה-dedup map בכל מחזור בדיקה — פותר דליפת זיכרון כי ה-Map גדל ללא הגבלה לאורך חיי השרת.

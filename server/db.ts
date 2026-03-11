@@ -238,12 +238,10 @@ export async function upsertReminderSettings(userId: number, data: {
 }) {
   const db = await getDb();
   if (!db) return null;
-  const existing = await getReminderSettings(userId);
-  if (existing) {
-    await db.update(reminderSettings).set(data).where(eq(reminderSettings.userId, userId));
-    return existing.id;
-  }
-  const result = await db.insert(reminderSettings).values({ userId, ...data });
+  // אטומי — ON DUPLICATE KEY UPDATE מונע race condition ושורות כפולות
+  const result = await db.insert(reminderSettings)
+    .values({ userId, ...data })
+    .onDuplicateKeyUpdate({ set: data });
   return result[0].insertId;
 }
 

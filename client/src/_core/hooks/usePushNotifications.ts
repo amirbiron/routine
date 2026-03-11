@@ -43,7 +43,7 @@ export function usePushNotifications() {
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        setState("denied");
+        setState(permission === "denied" ? "denied" : "default");
         return false;
       }
 

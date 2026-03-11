@@ -84,7 +84,7 @@ export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
 // הגדרות תזכורות יומיות
 export const reminderSettings = mysqlTable("reminderSettings", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
+  userId: int("userId").notNull().unique(),
   morningEnabled: boolean("morningEnabled").default(false).notNull(),
   morningTime: varchar("morningTime", { length: 5 }).default("08:00").notNull(), // HH:MM
   eveningEnabled: boolean("eveningEnabled").default(false).notNull(),

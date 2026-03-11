@@ -15,14 +15,17 @@ function initWebPush() {
 // מניעת שליחה כפולה — מפתח: "userId:type", ערך: "YYYY-MM-DD HH:MM" האחרון שנשלח
 const lastSentMap = new Map<string, string>();
 
-/** ניקוי רשומות ישנות מה-map — שומר רק רשומות מהיום */
+/** ניקוי רשומות ישנות מה-map — שומר רק רשומות מ-24 השעות האחרונות */
 function pruneLastSentMap() {
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  for (const [key, value] of lastSentMap) {
-    if (!value.startsWith(today)) {
+  // מחשבים את התאריך של אתמול ב-UTC — רשומה תקפה אם מתחילה בתאריך היום או אתמול
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const yesterday = new Date(now.getTime() - 86_400_000).toISOString().slice(0, 10);
+  lastSentMap.forEach((value, key) => {
+    if (!value.startsWith(today) && !value.startsWith(yesterday)) {
       lastSentMap.delete(key);
     }
-  }
+  });
 }
 
 /** שליחת push ישירה לרשימת subscriptions */
