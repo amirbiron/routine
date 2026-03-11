@@ -28,19 +28,23 @@ export function registerAuthRoutes(app: Express) {
 
       const { email, password, name } = parsed.data;
 
-      const existing = await db.getUserByEmail(email);
-      if (existing) {
-        res.status(409).json({ error: "Email already registered" });
-        return;
-      }
-
       const passwordHash = await hashPassword(password);
-      const userId = await db.createUser({
-        email,
-        name,
-        passwordHash,
-        loginMethod: "email",
-      });
+      let userId: number | undefined;
+      try {
+        userId = await db.createUser({
+          email,
+          name,
+          passwordHash,
+          loginMethod: "email",
+        });
+      } catch (err: any) {
+        // unique constraint על email — גם אם שני בקשות הגיעו במקביל
+        if (err?.code === "ER_DUP_ENTRY" || err?.message?.includes("Duplicate")) {
+          res.status(401).json({ error: "Invalid email or password" });
+          return;
+        }
+        throw err;
+      }
 
       if (!userId) {
         res.status(500).json({ error: "Failed to create user" });

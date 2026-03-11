@@ -54,3 +54,8 @@ After completing **every task** that modifies code, you **MUST** update `CHANGEL
 **קבצים:** `file1.ts`, `file2.tsx`, ...
 **פירוט:** <technical description in Hebrew of what changed, why, and any important implementation details>
 ```
+
+## Language
+- **Code comments**: Write in Hebrew
+- **PR summaries**: Write in Hebrew
+- **Commit messages**: English is fine

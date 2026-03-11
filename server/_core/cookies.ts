@@ -20,7 +20,7 @@ export function getSessionCookieOptions(
   return {
     httpOnly: true,
     path: "/",
-    sameSite: secure ? "lax" : "lax",
+    sameSite: "lax",
     secure,
   };
 }
