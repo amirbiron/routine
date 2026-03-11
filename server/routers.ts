@@ -286,7 +286,10 @@ export const appRouter = router({
         morningTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
         eveningEnabled: z.boolean().optional(),
         eveningTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
-        timezone: z.string().optional(),
+        timezone: z.string().refine((tz) => {
+          try { Intl.DateTimeFormat(undefined, { timeZone: tz }); return true; }
+          catch { return false; }
+        }, { message: "Invalid timezone" }).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         await db.upsertReminderSettings(ctx.user.id, input);

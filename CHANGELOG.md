@@ -8,6 +8,10 @@
 
 ## [2026-03-11]
 
+### תיקוני באגים — UI תזכורות וולידציית timezone
+**קבצים:** `client/src/pages/Reminders.tsx`, `server/routers.ts`
+**פירוט:** שלושה תיקונים: (1) העברת הצהרת `utils` לפני `updateMutation` למניעת תלות בסדר הצהרות שברירה. (2) הוספת `onError` handler ל-mutation שמשחזר את מצב ה-toggles מהשרת ומציג הודעת שגיאה — מונע מצב שבו ה-UI מראה תזכורת מופעלת אבל השרת לא שמר. (3) הוספת ולידציית timezone עם `Intl.DateTimeFormat` ב-route של עדכון תזכורות — מונע שמירת timezone לא תקין שגורם ל-RangeError בלולאת ה-scheduler.
+
 ### תיקוני באגים נוספים — push notifications ו-reminder settings
 **קבצים:** `server/pushScheduler.ts`, `client/src/_core/hooks/usePushNotifications.ts`, `drizzle/schema.ts`, `server/db.ts`
 **פירוט:** שלושה תיקונים: (1) פונקציית pruneLastSentMap השתמשה בתאריך UTC של השרת, אבל הערכים ב-map נשמרו בתאריך המקומי של המשתמש — עכשיו שומרים רשומות מהיום ומאתמול כדי למנוע מחיקה מוקדמת עבור משתמשים ב-timezone מקדים ל-UTC. (2) ב-usePushNotifications, סגירת דיאלוג ההרשאות בלי בחירה (permission="default") סימנה בטעות "denied" — עכשיו מבחינים בין "denied" ל-"default" כך שהמשתמש יכול לנסות שוב. (3) הוספת unique constraint על userId בטבלת reminderSettings והחלפת ה-upsert הלא-אטומי (select-then-insert) ב-onDuplicateKeyUpdate אטומי למניעת שורות כפולות ב-race condition.

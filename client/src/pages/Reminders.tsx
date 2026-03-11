@@ -18,13 +18,23 @@ export default function Reminders() {
   } = usePushNotifications();
 
   const { data: settings, isLoading: settingsLoading } = trpc.reminders.get.useQuery();
+  const utils = trpc.useUtils();
   const updateMutation = trpc.reminders.update.useMutation({
     onSuccess: () => {
       utils.reminders.get.invalidate();
       toast.success("ההגדרות נשמרו");
     },
+    onError: () => {
+      // שחזור מצב מהשרת במקרה של שגיאה
+      if (settings) {
+        setMorningEnabled(settings.morningEnabled);
+        setMorningTime(settings.morningTime);
+        setEveningEnabled(settings.eveningEnabled);
+        setEveningTime(settings.eveningTime);
+      }
+      toast.error("שגיאה בשמירת ההגדרות");
+    },
   });
-  const utils = trpc.useUtils();
 
   const [morningEnabled, setMorningEnabled] = useState(false);
   const [morningTime, setMorningTime] = useState("08:00");
