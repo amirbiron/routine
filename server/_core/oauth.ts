@@ -14,16 +14,14 @@ const attempts = new Map<string, { count: number; resetAt: number }>();
 /** ניקוי רשומות ישנות כל 5 דקות */
 setInterval(() => {
   const now = Date.now();
-  for (const [key, entry] of attempts) {
+  attempts.forEach((entry, key) => {
     if (now > entry.resetAt) attempts.delete(key);
-  }
+  });
 }, 5 * 60 * 1000);
 
 function getRateLimitKey(req: Request): string {
-  // IP מ-proxy או ישירות
-  const forwarded = req.headers["x-forwarded-for"];
-  const ip = typeof forwarded === "string" ? forwarded.split(",")[0].trim() : req.ip ?? "unknown";
-  return ip;
+  // req.ip מכבד את trust proxy ולוקח את ה-IP האמיתי של הלקוח
+  return req.ip ?? "unknown";
 }
 
 /** בודק ומעדכן rate limit. מחזיר true אם חסום */
