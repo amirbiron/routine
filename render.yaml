@@ -3,7 +3,7 @@ services:
     name: routine-anchors
     runtime: node
     plan: starter
-    buildCommand: pnpm install && drizzle-kit push --force && pnpm build
+    buildCommand: pnpm install && echo 'No, add the constraint without truncating the table' | drizzle-kit push && pnpm build
     startCommand: pnpm start
     envVars:
       - key: NODE_ENV
