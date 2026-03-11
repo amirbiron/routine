@@ -5,10 +5,10 @@ const conn = await mysql.createConnection(process.env.DATABASE_URL);
 
 const statements = [
   // users — הוספת עמודות חדשות + unique constraint
-  `ALTER TABLE users ADD COLUMN IF NOT EXISTS email varchar(320)`,
-  `ALTER TABLE users ADD COLUMN IF NOT EXISTS passwordHash text`,
-  `ALTER TABLE users ADD COLUMN IF NOT EXISTS loginMethod varchar(64)`,
-  `ALTER TABLE users ADD COLUMN IF NOT EXISTS tokenBalance int NOT NULL DEFAULT 0`,
+  `ALTER TABLE users ADD COLUMN email varchar(320)`,
+  `ALTER TABLE users ADD COLUMN passwordHash text`,
+  `ALTER TABLE users ADD COLUMN loginMethod varchar(64)`,
+  `ALTER TABLE users ADD COLUMN tokenBalance int NOT NULL DEFAULT 0`,
   `ALTER TABLE users ADD UNIQUE INDEX users_email_unique (email)`,
 
   // pushSubscriptions
