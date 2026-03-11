@@ -40,7 +40,7 @@ export function registerAuthRoutes(app: Express) {
       } catch (err: any) {
         // unique constraint על email — גם אם שני בקשות הגיעו במקביל
         if (err?.code === "ER_DUP_ENTRY" || err?.message?.includes("Duplicate")) {
-          res.status(401).json({ error: "Invalid email or password" });
+          res.status(409).json({ error: "Could not create account. Try logging in instead." });
           return;
         }
         throw err;

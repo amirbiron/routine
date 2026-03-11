@@ -143,7 +143,6 @@ class AuthService {
       throw ForbiddenError("User not found");
     }
 
-    await db.touchLastSignedIn(user.id);
     return user;
   }
 }
