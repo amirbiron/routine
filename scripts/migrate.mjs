@@ -33,6 +33,8 @@ const statements = [
     updatedAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE INDEX reminderSettings_userId_unique (userId)
   )`,
+  // אם הטבלה כבר קיימת בלי unique — נוסיף בנפרד
+  `ALTER TABLE reminderSettings ADD UNIQUE INDEX reminderSettings_userId_unique (userId)`,
 
   // tokenEvents
   `CREATE TABLE IF NOT EXISTS tokenEvents (
