@@ -1,0 +1,676 @@
+{
+  "query": "SELECT a.id, a.userId, a.title, a.category, a.isDefault, u.name, u.childName FROM activities a LEFT JOIN users u ON a.userId = u.id ORDER BY a.userId, a.sortOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wPDFGq7cwT2bVX.ee3a58f9a19a --database fveF2PNSGDmyJwBo6KPe6C --execute SELECT a.id, a.userId, a.title, a.category, a.isDefault, u.name, u.childName FROM activities a LEFT JOIN users u ON a.userId = u.id ORDER BY a.userId, a.sortOrder;",
+  "rows": [
+    {
+      "id": "30006",
+      "userId": "1",
+      "title": "Test",
+      "category": "solo",
+      "isDefault": "0",
+      "name": "אמיר בירון",
+      "childName": "NULL"
+    },
+    {
+      "id": "30009",
+      "userId": "1",
+      "title": "Test",
+      "category": "screens",
+      "isDefault": "0",
+      "name": "אמיר בירון",
+      "childName": "NULL"
+    },
+    {
+      "id": "30008",
+      "userId": "1",
+      "title": "Test",
+      "category": "movement",
+      "isDefault": "0",
+      "name": "אמיר בירון",
+      "childName": "NULL"
+    },
+    {
+      "id": "30007",
+      "userId": "1",
+      "title": "Test",
+      "category": "social",
+      "isDefault": "0",
+      "name": "אמיר בירון",
+      "childName": "NULL"
+    },
+    {
+      "id": "30003",
+      "userId": "1",
+      "title": "Test",
+      "category": "social",
+      "isDefault": "0",
+      "name": "אמיר בירון",
+      "childName": "NULL"
+    },
+    {
+      "id": "30005",
+      "userId": "1",
+      "title": "Test",
+      "category": "screens",
+      "isDefault": "0",
+      "name": "אמיר בירון",
+      "childName": "NULL"
+    },
+    {
+      "id": "30004",
+      "userId": "1",
+      "title": "Test",
+      "category": "movement",
+      "isDefault": "0",
+      "name": "אמיר בירון",
+      "childName": "NULL"
+    },
+    {
+      "id": "30002",
+      "userId": "1",
+      "title": "Test",
+      "category": "solo",
+      "isDefault": "0",
+      "name": "אמיר בירון",
+      "childName": "NULL"
+    },
+    {
+      "id": "2",
+      "userId": "32",
+      "title": "ציור ויצירה",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "3",
+      "userId": "32",
+      "title": "משחק קופסה",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "4",
+      "userId": "32",
+      "title": "בנייה וקוביות",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "5",
+      "userId": "32",
+      "title": "קריאת ספר",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "6",
+      "userId": "32",
+      "title": "האזנה לסיפור",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "7",
+      "userId": "32",
+      "title": "סידור פינה אישית",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "8",
+      "userId": "32",
+      "title": "אפייה במטבח",
+      "category": "social",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "9",
+      "userId": "32",
+      "title": "משחק משותף",
+      "category": "social",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "10",
+      "userId": "32",
+      "title": "יצירה משותפת",
+      "category": "social",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "11",
+      "userId": "32",
+      "title": "בישול ביחד",
+      "category": "social",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "12",
+      "userId": "32",
+      "title": "נשימות עמוקות",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "13",
+      "userId": "32",
+      "title": "מוזיקה רגועה",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "14",
+      "userId": "32",
+      "title": "חיבוק דובי",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "15",
+      "userId": "32",
+      "title": "ריקוד וקפיצות",
+      "category": "movement",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "16",
+      "userId": "32",
+      "title": "יוגה לילדים",
+      "category": "movement",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "17",
+      "userId": "32",
+      "title": "משחק בחצר",
+      "category": "movement",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "18",
+      "userId": "32",
+      "title": "ארוחת בוקר",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "19",
+      "userId": "32",
+      "title": "ארוחת צהריים",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "20",
+      "userId": "32",
+      "title": "ארוחת ערב",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "chani Tzik",
+      "childName": "חני"
+    },
+    {
+      "id": "42",
+      "userId": "77",
+      "title": "לשאול את אמא מה יש לאכול ...",
+      "category": "solo",
+      "isDefault": "0",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "44",
+      "userId": "77",
+      "title": "לקפל כביסה",
+      "category": "solo",
+      "isDefault": "0",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "43",
+      "userId": "77",
+      "title": "לנקות את המטבח",
+      "category": "solo",
+      "isDefault": "0",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "46",
+      "userId": "77",
+      "title": "חת''ת",
+      "category": "solo",
+      "isDefault": "0",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "48",
+      "userId": "77",
+      "title": "זום עם הרב לוין ",
+      "category": "solo",
+      "isDefault": "0",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "47",
+      "userId": "77",
+      "title": "רמב''ם",
+      "category": "solo",
+      "isDefault": "0",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "41",
+      "userId": "77",
+      "title": "להתקשר לאמא ...",
+      "category": "solo",
+      "isDefault": "0",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "40",
+      "userId": "77",
+      "title": "להכריז יחי x 3",
+      "category": "solo",
+      "isDefault": "0",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "45",
+      "userId": "77",
+      "title": "להעיר את יוסי לצבא",
+      "category": "solo",
+      "isDefault": "0",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "21",
+      "userId": "77",
+      "title": "ציור ויצירה",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "22",
+      "userId": "77",
+      "title": "משחק קופסה",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "23",
+      "userId": "77",
+      "title": "בנייה וקוביות",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "24",
+      "userId": "77",
+      "title": "קריאת ספר",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "25",
+      "userId": "77",
+      "title": "האזנה לסיפור",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "26",
+      "userId": "77",
+      "title": "סידור פינה אישית",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "27",
+      "userId": "77",
+      "title": "אפייה במטבח",
+      "category": "social",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "28",
+      "userId": "77",
+      "title": "משחק משותף",
+      "category": "social",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "29",
+      "userId": "77",
+      "title": "יצירה משותפת",
+      "category": "social",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "30",
+      "userId": "77",
+      "title": "בישול ביחד",
+      "category": "social",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "31",
+      "userId": "77",
+      "title": "נשימות עמוקות",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "32",
+      "userId": "77",
+      "title": "מוזיקה רגועה",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "33",
+      "userId": "77",
+      "title": "חיבוק דובי",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "34",
+      "userId": "77",
+      "title": "ריקוד וקפיצות",
+      "category": "movement",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "35",
+      "userId": "77",
+      "title": "יוגה לילדים",
+      "category": "movement",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "36",
+      "userId": "77",
+      "title": "משחק בחצר",
+      "category": "movement",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "37",
+      "userId": "77",
+      "title": "ארוחת בוקר",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "38",
+      "userId": "77",
+      "title": "ארוחת צהריים",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "39",
+      "userId": "77",
+      "title": "ארוחת ערב",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "חיש הפצת המעיינות - כפר חב\"ד",
+      "childName": "שניאור"
+    },
+    {
+      "id": "49",
+      "userId": "171",
+      "title": "ציור ויצירה",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "50",
+      "userId": "171",
+      "title": "משחק קופסה",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "51",
+      "userId": "171",
+      "title": "בנייה וקוביות",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "52",
+      "userId": "171",
+      "title": "קריאת ספר",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "53",
+      "userId": "171",
+      "title": "האזנה לסיפור",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "54",
+      "userId": "171",
+      "title": "סידור פינה אישית",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "55",
+      "userId": "171",
+      "title": "אפייה במטבח",
+      "category": "social",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "56",
+      "userId": "171",
+      "title": "משחק משותף",
+      "category": "social",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "57",
+      "userId": "171",
+      "title": "יצירה משותפת",
+      "category": "social",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "58",
+      "userId": "171",
+      "title": "בישול ביחד",
+      "category": "social",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "59",
+      "userId": "171",
+      "title": "נשימות עמוקות",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "60",
+      "userId": "171",
+      "title": "מוזיקה רגועה",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "61",
+      "userId": "171",
+      "title": "חיבוק דובי",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "62",
+      "userId": "171",
+      "title": "ריקוד וקפיצות",
+      "category": "movement",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "63",
+      "userId": "171",
+      "title": "יוגה לילדים",
+      "category": "movement",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "64",
+      "userId": "171",
+      "title": "משחק בחצר",
+      "category": "movement",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "65",
+      "userId": "171",
+      "title": "ארוחת בוקר",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "66",
+      "userId": "171",
+      "title": "ארוחת צהריים",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    },
+    {
+      "id": "67",
+      "userId": "171",
+      "title": "ארוחת ערב",
+      "category": "solo",
+      "isDefault": "1",
+      "name": "Shirel Msika",
+      "childName": "שיראל"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\ttitle\tcategory\tisDefault\tname\tchildName\n30006\t1\tTest\tsolo\t0\tאמיר בירון\tNULL\n30009\t1\tTest\tscreens\t0\tאמיר בירון\tNULL\n30008\t1\tTest\tmovement\t0\tאמיר בירון\tNULL\n30007\t1\tTest\tsocial\t0\tאמיר בירון\tNULL\n30003\t1\tTest\tsocial\t0\tאמיר בירון\tNULL\n30005\t1\tTest\tscreens\t0\tאמיר בירון\tNULL\n30004\t1\tTest\tmovement\t0\tאמיר בירון\tNULL\n30002\t1\tTest\tsolo\t0\tאמיר בירון\tNULL\n2\t32\tציור ויצירה\tsolo\t1\tchani Tzik\tחני\n3\t32\tמשחק קופסה\tsolo\t1\tchani Tzik\tחני\n4\t32\tבנייה וקוביות\tsolo\t1\tchani Tzik\tחני\n5\t32\tקריאת ספר\tsolo\t1\tchani Tzik\tחני\n6\t32\tהאזנה לסיפור\tsolo\t1\tchani Tzik\tחני\n7\t32\tסידור פינה אישית\tsolo\t1\tchani Tzik\tחני\n8\t32\tאפייה במטבח\tsocial\t1\tchani Tzik\tחני\n9\t32\tמשחק משותף\tsocial\t1\tchani Tzik\tחני\n10\t32\tיצירה משותפת\tsocial\t1\tchani Tzik\tחני\n11\t32\tבישול ביחד\tsocial\t1\tchani Tzik\tחני\n12\t32\tנשימות עמוקות\tsolo\t1\tchani Tzik\tחני\n13\t32\tמוזיקה רגועה\tsolo\t1\tchani Tzik\tחני\n14\t32\tחיבוק דובי\tsolo\t1\tchani Tzik\tחני\n15\t32\tריקוד וקפיצות\tmovement\t1\tchani Tzik\tחני\n16\t32\tיוגה לילדים\tmovement\t1\tchani Tzik\tחני\n17\t32\tמשחק בחצר\tmovement\t1\tchani Tzik\tחני\n18\t32\tארוחת בוקר\tsolo\t1\tchani Tzik\tחני\n19\t32\tארוחת צהריים\tsolo\t1\tchani Tzik\tחני\n20\t32\tארוחת ערב\tsolo\t1\tchani Tzik\tחני\n42\t77\tלשאול את אמא מה יש לאכול ...\tsolo\t0\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n44\t77\tלקפל כביסה\tsolo\t0\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n43\t77\tלנקות את המטבח\tsolo\t0\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n46\t77\tחת''ת\tsolo\t0\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n48\t77\tזום עם הרב לוין \tsolo\t0\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n47\t77\tרמב''ם\tsolo\t0\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n41\t77\tלהתקשר לאמא ...\tsolo\t0\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n40\t77\tלהכריז יחי x 3\tsolo\t0\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n45\t77\tלהעיר את יוסי לצבא\tsolo\t0\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n21\t77\tציור ויצירה\tsolo\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n22\t77\tמשחק קופסה\tsolo\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n23\t77\tבנייה וקוביות\tsolo\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n24\t77\tקריאת ספר\tsolo\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n25\t77\tהאזנה לסיפור\tsolo\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n26\t77\tסידור פינה אישית\tsolo\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n27\t77\tאפייה במטבח\tsocial\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n28\t77\tמשחק משותף\tsocial\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n29\t77\tיצירה משותפת\tsocial\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n30\t77\tבישול ביחד\tsocial\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n31\t77\tנשימות עמוקות\tsolo\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n32\t77\tמוזיקה רגועה\tsolo\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n33\t77\tחיבוק דובי\tsolo\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n34\t77\tריקוד וקפיצות\tmovement\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n35\t77\tיוגה לילדים\tmovement\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n36\t77\tמשחק בחצר\tmovement\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n37\t77\tארוחת בוקר\tsolo\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n38\t77\tארוחת צהריים\tsolo\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n39\t77\tארוחת ערב\tsolo\t1\tחיש הפצת המעיינות - כפר חב\"ד\tשניאור\n49\t171\tציור ויצירה\tsolo\t1\tShirel Msika\tשיראל\n50\t171\tמשחק קופסה\tsolo\t1\tShirel Msika\tשיראל\n51\t171\tבנייה וקוביות\tsolo\t1\tShirel Msika\tשיראל\n52\t171\tקריאת ספר\tsolo\t1\tShirel Msika\tשיראל\n53\t171\tהאזנה לסיפור\tsolo\t1\tShirel Msika\tשיראל\n54\t171\tסידור פינה אישית\tsolo\t1\tShirel Msika\tשיראל\n55\t171\tאפייה במטבח\tsocial\t1\tShirel Msika\tשיראל\n56\t171\tמשחק משותף\tsocial\t1\tShirel Msika\tשיראל\n57\t171\tיצירה משותפת\tsocial\t1\tShirel Msika\tשיראל\n58\t171\tבישול ביחד\tsocial\t1\tShirel Msika\tשיראל\n59\t171\tנשימות עמוקות\tsolo\t1\tShirel Msika\tשיראל\n60\t171\tמוזיקה רגועה\tsolo\t1\tShirel Msika\tשיראל\n61\t171\tחיבוק דובי\tsolo\t1\tShirel Msika\tשיראל\n62\t171\tריקוד וקפיצות\tmovement\t1\tShirel Msika\tשיראל\n63\t171\tיוגה לילדים\tmovement\t1\tShirel Msika\tשיראל\n64\t171\tמשחק בחצר\tmovement\t1\tShirel Msika\tשיראל\n65\t171\tארוחת בוקר\tsolo\t1\tShirel Msika\tשיראל\n66\t171\tארוחת צהריים\tsolo\t1\tShirel Msika\tשיראל\n67\t171\tארוחת ערב\tsolo\t1\tShirel Msika\tשיראל\n",
+  "stderr": "",
+  "execution_time_ms": 1587
+}
