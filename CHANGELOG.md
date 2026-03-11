@@ -8,6 +8,10 @@
 
 ## [2026-03-11]
 
+### תיקון VAPID subject — הוספת mailto: אוטומטית
+**קבצים:** `server/_core/env.ts`
+**פירוט:** כש-`VAPID_EMAIL` מוגדר ב-env בלי קידומת `mailto:` (למשל `amirbiron@gmail.com`), web-push זורק שגיאה "Vapid subject is not a valid URL" והתראות push מושבתות. הוספנו נורמליזציה אוטומטית שמוסיפה `mailto:` אם חסר.
+
 ### מניעת עדכון ריק בהגדרות תזכורות
 **קבצים:** `server/routers.ts`
 **פירוט:** הוספת `refine` לסכמת הקלט של `reminders.update` שדורש לפחות שדה אחד. בלי זה, אובייקט ריק `{}` עובר ולידציה אבל גורם ל-SQL לא תקין ב-`onDuplicateKeyUpdate({ set: {} })`.

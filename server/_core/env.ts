@@ -6,5 +6,8 @@ export const ENV = {
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY ?? "",
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY ?? "",
-  vapidEmail: process.env.VAPID_EMAIL ?? "mailto:admin@routine-app.com",
+  vapidEmail: (() => {
+    const email = process.env.VAPID_EMAIL ?? "mailto:admin@routine-app.com";
+    return email.startsWith("mailto:") ? email : `mailto:${email}`;
+  })(),
 };
