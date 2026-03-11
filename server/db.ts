@@ -6,6 +6,8 @@ import {
   schedules, InsertSchedule,
   reflections, InsertReflection,
   tokenEvents, InsertTokenEvent,
+  pushSubscriptions, InsertPushSubscription,
+  reminderSettings, InsertReminderSettings,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -190,4 +192,75 @@ export async function getTokenEvents(userId: number, limit: number = 20) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(tokenEvents).where(eq(tokenEvents.userId, userId)).orderBy(desc(tokenEvents.createdAt)).limit(limit);
+}
+
+// ─── Push Subscriptions ─────────────────────────────────────
+export async function savePushSubscription(userId: number, subscription: { endpoint: string; keys: { p256dh: string; auth: string } }) {
+  const db = await getDb();
+  if (!db) return null;
+  // מחיקת subscription ישן עם אותו endpoint
+  await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, subscription.endpoint));
+  const result = await db.insert(pushSubscriptions).values({
+    userId,
+    endpoint: subscription.endpoint,
+    p256dh: subscription.keys.p256dh,
+    auth: subscription.keys.auth,
+  });
+  return result[0].insertId;
+}
+
+export async function deletePushSubscription(userId: number, endpoint: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(pushSubscriptions).where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.endpoint, endpoint)));
+}
+
+export async function getPushSubscriptions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+}
+
+// ─── Reminder Settings ──────────────────────────────────────
+export async function getReminderSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(reminderSettings).where(eq(reminderSettings.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function upsertReminderSettings(userId: number, data: {
+  morningEnabled?: boolean;
+  morningTime?: string;
+  eveningEnabled?: boolean;
+  eveningTime?: string;
+  timezone?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  const existing = await getReminderSettings(userId);
+  if (existing) {
+    await db.update(reminderSettings).set(data).where(eq(reminderSettings.userId, userId));
+    return existing.id;
+  }
+  const result = await db.insert(reminderSettings).values({ userId, ...data });
+  return result[0].insertId;
+}
+
+/** מחזיר את כל המשתמשים שיש להם תזכורת פעילה עם ה-subscriptions שלהם */
+export async function getUsersWithActiveReminders() {
+  const db = await getDb();
+  if (!db) return [];
+  // שליפת כל ההגדרות — סינון בקוד כי OR על booleans פשוט יותר כאן
+  const settings = await db.select().from(reminderSettings);
+  const active = settings.filter(s => s.morningEnabled || s.eveningEnabled);
+  // לכל משתמש פעיל, נביא את ה-push subscriptions
+  const result = [];
+  for (const setting of active) {
+    const subs = await getPushSubscriptions(setting.userId);
+    if (subs.length > 0) {
+      result.push({ setting, subscriptions: subs });
+    }
+  }
+  return result;
 }
