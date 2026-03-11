@@ -290,7 +290,7 @@ export const appRouter = router({
           try { Intl.DateTimeFormat(undefined, { timeZone: tz }); return true; }
           catch { return false; }
         }, { message: "Invalid timezone" }).optional(),
-      }))
+      }).refine((obj) => Object.keys(obj).length > 0, { message: "At least one field is required" }))
       .mutation(async ({ ctx, input }) => {
         await db.upsertReminderSettings(ctx.user.id, input);
         return { success: true };

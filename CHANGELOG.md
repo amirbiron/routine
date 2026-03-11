@@ -8,6 +8,10 @@
 
 ## [2026-03-11]
 
+### מניעת עדכון ריק בהגדרות תזכורות
+**קבצים:** `server/routers.ts`
+**פירוט:** הוספת `refine` לסכמת הקלט של `reminders.update` שדורש לפחות שדה אחד. בלי זה, אובייקט ריק `{}` עובר ולידציה אבל גורם ל-SQL לא תקין ב-`onDuplicateKeyUpdate({ set: {} })`.
+
 ### תיקון race condition ב-mutations של תזכורות והסרת קוד מת
 **קבצים:** `client/src/pages/Reminders.tsx`, `server/pushScheduler.ts`
 **פירוט:** (1) ב-`handleMorningTimeChange` ו-`handleEveningTimeChange` — ה-mutation שלח רק את השעה בלי `enabled`, מה שגרם ל-race condition עם mutation של toggle. עכשיו שולחים גם `morningEnabled`/`eveningEnabled` כדי שה-upsert ישמור את כל השדות הרלוונטיים גם אם הבקשות מגיעות בסדר שונה. (2) הסרת משתנה `schedulerInterval` שהפך לקוד מת אחרי הסרת `stopPushScheduler`.
