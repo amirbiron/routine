@@ -1,0 +1,12 @@
+{
+  "name": "Routine Anchors – שגרה בחוסר שגרה",
+  "repo": "https://github.com/amirbiron/routine",
+  "tags": ["typescript", "react", "vite", "tailwind", "express", "trpc", "mysql", "drizzle", "full-stack", "pwa"],
+  "highlights": [
+    "כלי אינטראקטיבי לבניית שגרה יומית לילדים עם Drag-and-Drop",
+    "Full-stack TypeScript עם tRPC לtype-safety מלא בין client לserver",
+    "ממשק עשיר עם React 19, Radix UI, Framer Motion ו-Dark mode",
+    "Push notifications ומערכת אימות JWT עם HTTP-only cookies",
+    "גרפים ואנליטיקה עם Recharts וניהול אדמין"
+  ]
+}
