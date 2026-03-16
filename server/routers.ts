@@ -71,13 +71,20 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const existingChildren = await db.getChildren(ctx.user.id);
         const sortOrder = existingChildren.length;
-        const id = await db.createChild({
-          userId: ctx.user.id,
-          name: input.name,
-          avatarColor: input.avatarColor,
-          sortOrder,
-        });
-        return { id };
+        try {
+          const id = await db.createChild({
+            userId: ctx.user.id,
+            name: input.name,
+            avatarColor: input.avatarColor,
+            sortOrder,
+          });
+          return { id };
+        } catch (e: any) {
+          if (e?.code === "ER_DUP_ENTRY") {
+            throw new TRPCError({ code: "CONFLICT", message: "ילד עם שם זהה כבר קיים" });
+          }
+          throw e;
+        }
       }),
 
     update: protectedProcedure
@@ -88,8 +95,15 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;
-        await db.updateChild(id, ctx.user.id, data);
-        return { success: true };
+        try {
+          await db.updateChild(id, ctx.user.id, data);
+          return { success: true };
+        } catch (e: any) {
+          if (e?.code === "ER_DUP_ENTRY") {
+            throw new TRPCError({ code: "CONFLICT", message: "ילד עם שם זהה כבר קיים" });
+          }
+          throw e;
+        }
       }),
 
     delete: protectedProcedure

@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### תיקון: טיפול בשגיאת שם כפול ביצירה/עדכון ילד + הסרת קוד מת
+**קבצים:** `server/routers.ts`, `server/db.ts`
+**פירוט:** האינדקס הייחודי `(userId, name)` שנוסף לטבלת children גרם ל-500 כשמשתמש ניסה ליצור או לשנות שם ילד לשם שכבר קיים. הוספה תפיסת שגיאת `ER_DUP_ENTRY` ב-`children.create` ו-`children.update` שמחזירה שגיאת CONFLICT ברורה ללקוח. בנוסף, הוסרה הפונקציה `linkOrphanDataToChild` שהפכה לקוד מת אחרי שהלוגיקה שלה נבלעה לתוך `backfillChild`.
+
 ### תיקון: race condition ו-backfill לא-אטומי ביצירת ילד אוטומטית
 **קבצים:** `drizzle/schema.ts`, `server/db.ts`, `server/routers.ts`
 **פירוט:** תוקנו שני באגים ב-backfill של טבלת children: (1) Race condition — כשכמה בקשות מגיעות במקביל (retry של react-query, כמה טאבים), כולן רואות 0 ילדים ויוצרות כפילויות. הפתרון: אינדקס ייחודי על `(userId, name)` בטבלת children + שימוש ב-`INSERT IGNORE` שמתעלם מכפילויות. (2) Non-atomic backfill — `createChild` ו-`linkOrphanDataToChild` רצו בנפרד, כך שאם הקישור נכשל הנתונים היתומים נתקעים לצמיתות. הפתרון: פונקציה חדשה `backfillChild` שעוטפת הכל בטרנזקציה אחת.
