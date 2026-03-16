@@ -257,9 +257,12 @@ export const appRouter = router({
   }),
 
   tokens: router({
-    balance: protectedProcedure.query(async ({ ctx }) => {
-      return { balance: ctx.user.tokenBalance || 0 };
-    }),
+    balance: protectedProcedure
+      .input(z.object({ childId: optionalChildId }).optional())
+      .query(async ({ ctx, input }) => {
+        const balance = await db.getTokenBalance(ctx.user.id, input?.childId);
+        return { balance };
+      }),
 
     award: protectedProcedure
       .input(z.object({

@@ -1,4 +1,4 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
@@ -227,6 +227,17 @@ export async function getRecentReflections(userId: number, limit: number = 7, ch
 }
 
 // ─── Token Events ────────────────────────────────────────────
+
+/** חישוב יתרת אסימונים לפי סכום אירועים — מחושב per-child כשמועבר childId */
+export async function getTokenBalance(userId: number, childId?: number | null): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const conditions = [eq(tokenEvents.userId, userId)];
+  if (childId != null) conditions.push(eq(tokenEvents.childId, childId));
+  const result = await db.select({ total: sum(tokenEvents.amount) }).from(tokenEvents).where(and(...conditions));
+  return Number(result[0]?.total) || 0;
+}
+
 export async function createTokenEvent(data: InsertTokenEvent) {
   const db = await getDb();
   if (!db) return null;

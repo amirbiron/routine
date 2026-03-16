@@ -235,14 +235,15 @@ describe("tokens router", () => {
     await expect(caller.tokens.balance()).rejects.toThrow();
   });
 
-  it("returns token balance for authenticated user", async () => {
+  it("returns token balance for authenticated user (computed from events)", async () => {
+    // יתרה מחושבת מסכום אירועי tokenEvents ב-DB — ללא DB מוחזר 0
     const { ctx } = createAuthContext({ tokenBalance: 15 });
     const caller = appRouter.createCaller(ctx);
     const result = await caller.tokens.balance();
-    expect(result).toEqual({ balance: 15 });
+    expect(result).toEqual({ balance: 0 });
   });
 
-  it("returns 0 balance when tokenBalance is null/undefined", async () => {
+  it("returns 0 balance when no token events exist", async () => {
     const { ctx } = createAuthContext({ tokenBalance: 0 });
     const caller = appRouter.createCaller(ctx);
     const result = await caller.tokens.balance();

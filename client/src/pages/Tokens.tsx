@@ -12,7 +12,7 @@ export default function Tokens() {
   const [date] = useState(getTodayIsrael);
   const utils = trpc.useUtils();
   const { activeChildId } = useActiveChild();
-  const { data: balanceData } = trpc.tokens.balance.useQuery();
+  const { data: balanceData } = trpc.tokens.balance.useQuery({ childId: activeChildId });
   const { data: history = [] } = trpc.tokens.history.useQuery({ limit: 20, childId: activeChildId });
   const { data: schedule } = trpc.schedule.get.useQuery({ date, childId: activeChildId });
 

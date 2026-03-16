@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### תיקון יתרת אסימונים — חישוב per-child במקום גלובלי
+**קבצים:** `server/db.ts`, `server/routers.ts`, `client/src/pages/Tokens.tsx`, `server/routers.test.ts`
+**פירוט:** יתרת האסימונים הייתה מאוחסנת כערך גלובלי בטבלת `users.tokenBalance`, כך שכל הילדים ראו את אותה יתרה למרות שהיסטוריית האירועים הייתה נפרדת. הוחלף לחישוב דינמי מ-`SUM(tokenEvents.amount)` עם סינון per-child. פונקציה חדשה `getTokenBalance(userId, childId?)` ב-db.ts, הראוטר `tokens.balance` מקבל `childId` אופציונלי, והקליינט מעביר `activeChildId`.
+
 ### תיקון באגים בהחלפת ילד פעיל
 **קבצים:** `client/src/pages/ScheduleBuilder.tsx`, `client/src/pages/Reflection.tsx`, `client/src/pages/ActivityBank.tsx`
 **פירוט:** תיקון 4 באגים שהתגלו בפיצ'ר ריבוי הילדים:
