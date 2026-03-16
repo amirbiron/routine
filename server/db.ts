@@ -174,7 +174,12 @@ export async function getSchedule(userId: number, date: string, childId?: number
   const db = await getDb();
   if (!db) return null;
   const conditions = [eq(schedules.userId, userId), eq(schedules.date, date)];
-  if (childId != null) conditions.push(eq(schedules.childId, childId));
+  // התאמה מדויקת: childId ספציפי או IS NULL — מניעת דריסה בין ילדים שונים
+  if (childId != null) {
+    conditions.push(eq(schedules.childId, childId));
+  } else {
+    conditions.push(isNull(schedules.childId));
+  }
   const result = await db.select().from(schedules).where(and(...conditions)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
@@ -227,7 +232,12 @@ export async function getRecentReflections(userId: number, limit: number = 7, ch
   const db = await getDb();
   if (!db) return [];
   const conditions = [eq(reflections.userId, userId)];
-  if (childId != null) conditions.push(eq(reflections.childId, childId));
+  // התאמה מדויקת: childId ספציפי או IS NULL — מניעת ערבוב רפלקציות בין ילדים
+  if (childId != null) {
+    conditions.push(eq(reflections.childId, childId));
+  } else {
+    conditions.push(isNull(reflections.childId));
+  }
   return db.select().from(reflections).where(and(...conditions)).orderBy(desc(reflections.date)).limit(limit);
 }
 

@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### תיקון: שאילתות schedule ו-recentReflections חסרות בדיקת isNull — דריסת נתונים בין ילדים
+**קבצים:** `server/db.ts`
+**פירוט:** `getSchedule` לא הוסיף `isNull(schedules.childId)` כש-childId לא מוגדר — כך `upsertSchedule` יכול היה להתאים ולדרוס לוז של ילד ספציפי. אותה בעיה בדיוק תוקנה קודם ב-`upsertReflection` אבל לא הוחלה על הנתיב של schedule. תוקן גם ב-`getRecentReflections` שסבל מאותו חוסר.
+
 ### תיקון: Onboarding לא מגדיר ילד פעיל אחרי יצירה + upsert רפלקציה עלול לדרוס ילד אחר
 **קבצים:** `client/src/pages/Onboarding.tsx`, `server/db.ts`
 **פירוט:** שני תיקונים:
