@@ -134,6 +134,17 @@ export async function deleteChild(id: number, userId: number) {
   await db.delete(children).where(and(eq(children.id, id), eq(children.userId, userId)));
 }
 
+// שיוך נתונים ישנים (childId=NULL) לילד שנוצר ב-backfill
+export async function linkOrphanDataToChild(userId: number, childId: number) {
+  const db = await getDb();
+  if (!db) return;
+  const userCond = eq(activities.userId, userId);
+  await db.update(activities).set({ childId }).where(and(userCond, isNull(activities.childId)));
+  await db.update(schedules).set({ childId }).where(and(eq(schedules.userId, userId), isNull(schedules.childId)));
+  await db.update(reflections).set({ childId }).where(and(eq(reflections.userId, userId), isNull(reflections.childId)));
+  await db.update(tokenEvents).set({ childId }).where(and(eq(tokenEvents.userId, userId), isNull(tokenEvents.childId)));
+}
+
 // ─── Activities ──────────────────────────────────────────────
 export async function getActivities(userId: number, childId?: number | null) {
   const db = await getDb();

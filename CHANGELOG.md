@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### תיקון: ChildSelector לא מוצג למשתמשים ישנים — backfill אוטומטי של טבלת children
+**קבצים:** `server/routers.ts`, `server/db.ts`
+**פירוט:** משתמשים שנרשמו לפני הוספת פיצ'ר ריבוי ילדים היו עם `childName` בטבלת `users` אבל בלי רשומה בטבלת `children`. כתוצאה, `children.list` החזיר מערך ריק ו-ChildSelector לא הוצג כלל. הפתרון: backfill אוטומטי ב-`children.list` — אם אין ילדים אבל יש `childName`, נוצרת רשומת ילד אוטומטית. בנוסף, כל הנתונים הקיימים (פעילויות, לוחות זמנים, רפלקציות, אסימונים) עם `childId=NULL` משויכים לילד החדש דרך פונקציית `linkOrphanDataToChild`.
+
 ### תיקון: שאילתות schedule ו-recentReflections חסרות בדיקת isNull — דריסת נתונים בין ילדים
 **קבצים:** `server/db.ts`
 **פירוט:** `getSchedule` לא הוסיף `isNull(schedules.childId)` כש-childId לא מוגדר — כך `upsertSchedule` יכול היה להתאים ולדרוס לוז של ילד ספציפי. אותה בעיה בדיוק תוקנה קודם ב-`upsertReflection` אבל לא הוחלה על הנתיב של schedule. תוקן גם ב-`getRecentReflections` שסבל מאותו חוסר.
