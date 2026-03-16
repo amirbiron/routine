@@ -1,4 +1,4 @@
-import { eq, and, desc, sum, isNull } from "drizzle-orm";
+import { eq, and, desc, sum, isNull, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
@@ -132,6 +132,35 @@ export async function deleteChild(id: number, userId: number) {
   await db.delete(reflections).where(and(eq(reflections.userId, userId), eq(reflections.childId, id)));
   await db.delete(tokenEvents).where(and(eq(tokenEvents.userId, userId), eq(tokenEvents.childId, id)));
   await db.delete(children).where(and(eq(children.id, id), eq(children.userId, userId)));
+}
+
+// backfill אטומי — יצירת ילד + שיוך נתונים יתומים בטרנזקציה אחת, עם הגנה מפני race condition
+export async function backfillChild(userId: number, name: string): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  return db.transaction(async (tx) => {
+    // INSERT IGNORE — אם רשומה כפולה כבר קיימת (race condition), לא נזרקת שגיאה
+    await tx.execute(
+      sql`INSERT IGNORE INTO children (userId, name, avatarColor, sortOrder, createdAt)
+          VALUES (${userId}, ${name}, 'coral', 0, NOW())`
+    );
+
+    // תמיד מחזירים את ה-ID של הילד — בין אם נוצר עכשיו ובין אם כבר היה קיים
+    const rows = await tx.select({ id: children.id }).from(children)
+      .where(and(eq(children.userId, userId), eq(children.name, name)));
+    if (rows.length === 0) return null;
+
+    const childId = rows[0].id;
+
+    // שיוך נתונים יתומים לילד — בתוך אותה טרנזקציה
+    await tx.update(activities).set({ childId }).where(and(eq(activities.userId, userId), isNull(activities.childId)));
+    await tx.update(schedules).set({ childId }).where(and(eq(schedules.userId, userId), isNull(schedules.childId)));
+    await tx.update(reflections).set({ childId }).where(and(eq(reflections.userId, userId), isNull(reflections.childId)));
+    await tx.update(tokenEvents).set({ childId }).where(and(eq(tokenEvents.userId, userId), isNull(tokenEvents.childId)));
+
+    return childId;
+  });
 }
 
 // ─── Activities ──────────────────────────────────────────────
