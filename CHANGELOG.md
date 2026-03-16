@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### תיקון: כשל ב-seed חוסם סגירת דיאלוג והפעלת ילד חדש
+**קבצים:** `client/src/pages/ChildrenManager.tsx`
+**פירוט:** ב-`handleSave`, קריאת `seedMutation.mutateAsync` לא הייתה עטופה ב-try-catch. אם ה-seed נכשל, `setActiveChildId` ו-`setDialogOpen(false)` לא הגיעו לביצוע — הדיאלוג נשאר פתוח והילד החדש לא הוגדר כפעיל. עטפנו ב-try-catch בהתאמה לדפוס הקיים ב-Onboarding, כי ActivityBank מנסה seed אוטומטית.
+
 ### תיקון: רפלקציה יוצרת שורות כפולות במקום עדכון
 **קבצים:** `server/db.ts`, `server/routers.ts`
 **פירוט:** `reflection.save` קרא ל-`createReflection` (INSERT) בכל שמירה, מה שיצר שורות כפולות לאותו user+date+child. הוחלף ב-`upsertReflection` שבודק אם כבר קיימת רפלקציה ומעדכן אותה במקום ליצור חדשה.

@@ -71,9 +71,13 @@ export default function ChildrenManager() {
       await updateMutation.mutateAsync({ id: editingId, name: form.name.trim(), avatarColor: form.avatarColor });
     } else {
       const result = await createMutation.mutateAsync({ name: form.name.trim(), avatarColor: form.avatarColor });
-      // seed פעילויות ברירת מחדל לילד החדש
+      // seed לא קריטי — ActivityBank ינסה שוב אוטומטית
       if (result.id) {
-        await seedMutation.mutateAsync({ childId: result.id });
+        try {
+          await seedMutation.mutateAsync({ childId: result.id });
+        } catch (seedError) {
+          console.warn("Seed defaults failed, will retry in ActivityBank:", seedError);
+        }
         setActiveChildId(result.id);
       }
     }
