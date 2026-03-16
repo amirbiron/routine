@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { ChildProvider } from "./contexts/ChildContext";
 import { useAuth } from "./_core/hooks/useAuth";
 import Home from "./pages/Home";
 import Onboarding from "./pages/Onboarding";
@@ -14,6 +15,7 @@ import Tokens from "./pages/Tokens";
 import ParentInfo from "./pages/ParentInfo";
 import Reminders from "./pages/Reminders";
 import Login from "./pages/Login";
+import ChildrenManager from "./pages/ChildrenManager";
 import { AppHeader } from "./components/AppHeader";
 import { BottomNav } from "./components/BottomNav";
 import { trpc } from "./lib/trpc";
@@ -58,6 +60,7 @@ function AppContent() {
           <Route path="/tokens" component={Tokens} />
           <Route path="/reminders" component={Reminders} />
           <Route path="/parents" component={ParentInfo} />
+          <Route path="/children" component={ChildrenManager} />
           <Route path="/404" component={NotFound} />
           <Route component={NotFound} />
         </Switch>
@@ -71,10 +74,12 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
-        <TooltipProvider>
-          <Toaster />
-          <AppContent />
-        </TooltipProvider>
+        <ChildProvider>
+          <TooltipProvider>
+            <Toaster />
+            <AppContent />
+          </TooltipProvider>
+        </ChildProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

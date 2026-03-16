@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,13 +8,15 @@ import { CATEGORY_LABELS, COLOR_MAP, ICON_OPTIONS, type ActivityCategory } from 
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { useActiveChild } from "@/contexts/ChildContext";
 
 const CATEGORIES: ActivityCategory[] = ["solo", "social", "movement", "screens"];
 const COLORS = Object.keys(COLOR_MAP);
 
 export default function ActivityBank() {
   const utils = trpc.useUtils();
-  const { data: activities = [], isLoading } = trpc.activities.list.useQuery();
+  const { activeChildId } = useActiveChild();
+  const { data: activities = [], isLoading } = trpc.activities.list.useQuery({ childId: activeChildId });
   const seedMutation = trpc.activities.seedDefaults.useMutation({
     onSuccess: (result) => {
       if (result.seeded) utils.activities.list.invalidate();
@@ -30,16 +32,23 @@ export default function ActivityBank() {
     onSuccess: () => { utils.activities.list.invalidate(); toast.success("הפעילות נמחקה"); },
   });
 
-  // Auto-seed defaults if user has no default activities
+  // איפוס seedAttempted בעת החלפת ילד
   const [seedAttempted, setSeedAttempted] = useState(false);
-  if (!isLoading && !seedAttempted && activities.length === 0) {
-    setSeedAttempted(true);
-    try {
-      seedMutation.mutate();
-    } catch (e) {
-      console.error("Failed to seed defaults:", e);
+  const prevChildIdRef = useRef(activeChildId);
+  useEffect(() => {
+    if (prevChildIdRef.current !== activeChildId) {
+      prevChildIdRef.current = activeChildId;
+      setSeedAttempted(false);
     }
-  }
+  }, [activeChildId]);
+
+  // Auto-seed defaults — רק אם activeChildId כבר נטען
+  useEffect(() => {
+    if (!isLoading && !seedAttempted && activities.length === 0 && activeChildId != null) {
+      setSeedAttempted(true);
+      seedMutation.mutate({ childId: activeChildId });
+    }
+  }, [isLoading, seedAttempted, activities.length, activeChildId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -62,7 +71,7 @@ export default function ActivityBank() {
     if (editingId) {
       await updateMutation.mutateAsync({ id: editingId, ...form });
     } else {
-      await createMutation.mutateAsync(form);
+      await createMutation.mutateAsync({ ...form, childId: activeChildId });
     }
     setDialogOpen(false);
   };

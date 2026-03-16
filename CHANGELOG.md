@@ -6,6 +6,96 @@
 
 ---
 
+## [2026-03-16]
+
+### תיקון: Onboarding לא מגדיר ילד פעיל אחרי יצירה + upsert רפלקציה עלול לדרוס ילד אחר
+**קבצים:** `client/src/pages/Onboarding.tsx`, `server/db.ts`
+**פירוט:** שני תיקונים:
+1. ב-Onboarding, אחרי יצירת ילד חדש לא נקרא `setActiveChildId` — כל השאילתות הראשונות רצו עם `childId: undefined`. נוסף `setActiveChildId(result.id)` מיד אחרי יצירה, ו-`refetch()` הפך ל-`await refetch()` כדי שה-context יתעדכן לפני `onComplete()`.
+2. ב-`upsertReflection`, כש-`childId` הוא `undefined` השאילתה לא סיננה לפי childId — וזה יכול לדרוס רפלקציה של ילד אחר באותו תאריך. נוסף תנאי `isNull(reflections.childId)` כשאין childId, כך שההתאמה תמיד מדויקת.
+
+### תיקון: כשל ב-seed חוסם סגירת דיאלוג והפעלת ילד חדש
+**קבצים:** `client/src/pages/ChildrenManager.tsx`
+**פירוט:** ב-`handleSave`, קריאת `seedMutation.mutateAsync` לא הייתה עטופה ב-try-catch. אם ה-seed נכשל, `setActiveChildId` ו-`setDialogOpen(false)` לא הגיעו לביצוע — הדיאלוג נשאר פתוח והילד החדש לא הוגדר כפעיל. עטפנו ב-try-catch בהתאמה לדפוס הקיים ב-Onboarding, כי ActivityBank מנסה seed אוטומטית.
+
+### תיקון: רפלקציה יוצרת שורות כפולות במקום עדכון
+**קבצים:** `server/db.ts`, `server/routers.ts`
+**פירוט:** `reflection.save` קרא ל-`createReflection` (INSERT) בכל שמירה, מה שיצר שורות כפולות לאותו user+date+child. הוחלף ב-`upsertReflection` שבודק אם כבר קיימת רפלקציה ומעדכן אותה במקום ליצור חדשה.
+
+### תיקון: toggleItem מחזיר תשובה לא עקבית כשאין לוח זמנים
+**קבצים:** `server/routers.ts`
+**פירוט:** `schedule.toggleItem` החזיר `{ success: false }` ללא שדה `allCompleted` כשלא נמצא לוח זמנים. הלקוח ניגש ל-`result.allCompleted` שהיה `undefined`. נוסף `allCompleted: false` לתשובה.
+
+### תיקון: מחיקת ילד אחרון זורקת Error רגיל במקום TRPCError
+**קבצים:** `server/routers.ts`
+**פירוט:** `children.delete` זרק `new Error()` שגרם ל-tRPC להחזיר 500 INTERNAL_SERVER_ERROR. הוחלף ב-`TRPCError({ code: "BAD_REQUEST" })` כדי שהלקוח יקבל שגיאה ברורה עם קוד 400.
+
+### תיקון: auto-seed פעילויות רץ בזמן render במקום ב-effect
+**קבצים:** `client/src/pages/ActivityBank.tsx`
+**פירוט:** לוגיקת ה-auto-seed הפעילה `setSeedAttempted` ו-`seedMutation.mutate` ישירות בגוף הרנדור של הקומפוננטה, מה שגורם ל-React להזהיר על עדכון state בזמן render. הועבר ל-`useEffect`.
+
+### תיקון: מחיקת ילד פעיל משאירה activeChildId לא תקין
+**קבצים:** `client/src/pages/ChildrenManager.tsx`
+**פירוט:** כשמוחקים את הילד הנוכחי, `activeChildId` נשאר על ה-ID שנמחק עד שה-refetch חוזר. נוסף מעבר לילד אחר לפני ביצוע המחיקה, כך ש-localStorage ו-context מתעדכנים מיד.
+
+### אבטחה: בדיקת בעלות על childId במוטציות בצד השרת
+**קבצים:** `server/db.ts`, `server/routers.ts`
+**פירוט:** כל המוטציות שמקבלות `childId` מהלקוח (activities.create, activities.seedDefaults, schedule.save, schedule.toggleItem, reflection.save, tokens.award) לא אימתו שה-childId שייך למשתמש המחובר. נוספה פונקציית `verifyChildOwnership` ב-db.ts ו-`assertChildOwnership` ב-routers.ts שזורקת TRPCError FORBIDDEN אם הילד לא שייך למשתמש. הבדיקה מופעלת בתחילת כל מוטציה — רק אם childId מסופק (undefined עובר בלי בדיקה לתאימות אחורה).
+
+### תיקון: רפלקציה לא מתעדכנת ב-cache אחרי שמירה
+**קבצים:** `client/src/pages/Reflection.tsx`
+**פירוט:** ה-`onSuccess` של `reflection.save` לא ביצע `invalidate()` על `reflection.get` ו-`reflection.recent`. כשמשתמש שמר רפלקציה לילד א', עבר לילד ב' וחזר — הקאש הישן הציג טופס ריק במקום תצוגת ההצלחה. נוספו `utils.reflection.get.invalidate()` ו-`utils.reflection.recent.invalidate()`.
+
+### תיקון: לוח זמנים ריק בהחלפת ילדים עם אותו updatedAt
+**קבצים:** `client/src/pages/ScheduleBuilder.tsx`
+**פירוט:** ה-effect לאתחול לוח הזמנים תלוי ב-`scheduleVersion` (מ-`updatedAt`), אבל לא ב-`activeChildId`. כששני ילדים חולקים אותו `updatedAt`, ה-effect לא רץ מחדש אחרי החלפת ילד — והמשתמש רואה לוח ריק. נוסף `activeChildId` למערך ה-dependencies של ה-effect.
+
+### תיקון: refetch אחרי toggle דורס שינויים מקומיים שלא נשמרו בלוח הזמנים
+**קבצים:** `client/src/pages/ScheduleBuilder.tsx`
+**פירוט:** כאשר המשתמש הוסיף/מחק/גרר פעילויות ואז סימן פעילות כהושלמה (toggle), ה-`onSuccess` של `toggleMutation` הפעיל `invalidate()` שגרם ל-effect לדרוס את השינויים המקומיים שלא נשמרו. נוסף דגל `dirty` שנדלק בהוספה (`addActivity`), מחיקה (`removeActivity`) וגרירה (`handleDragEnd`), ומונע מה-effect לסנכרן מהשרת כל עוד יש שינויים מקומיים. הדגל מתאפס בשמירה מוצלחת (`saveMutation.onSuccess`) ובהחלפת ילד פעיל.
+
+### תיקון: אנימציית חגיגה מופעלת גם כשהענקת אסימונים נדחית
+**קבצים:** `client/src/pages/Tokens.tsx`
+**פירוט:** ה-callback `onSuccess` של mutation הענקת אסימונים הפעיל `setCelebrating(true)` ללא תנאי, גם כשהשרת החזיר `alreadyAwarded: true`. המשתמש ראה חגיגה + הודעת שגיאה בו-זמנית. הועבר הלוגיקה (celebration + invalidation + toast) מ-`onSuccess` לתוך `handleAward` — רק אחרי בדיקת `alreadyAwarded`.
+
+### תיקוני באגים: סנכרון לוח זמנים, seed ב-onboarding, הענקת אסימונים כפולה
+**קבצים:** `client/src/pages/ScheduleBuilder.tsx`, `client/src/pages/Onboarding.tsx`, `server/db.ts`, `server/routers.ts`, `client/src/pages/Tokens.tsx`
+**פירוט:** (1) **ScheduleBuilder** — ה-effect לאתחול scheduleItems השתמש ב-`existingSchedule.id` כ-key, שלא משתנה כשפריטים מתעדכנים (toggleItem). הוחלף ל-`updatedAt` שמשתנה בכל upsert. (2) **Onboarding** — אם seedActivities נכשל אחרי שהילד כבר נוצר, ה-catch block חסם התקדמות ו-seed לא נוסה שנית (כי createdChildId כבר מלא). עכשיו seed עטוף ב-try/catch נפרד — כישלון seed לא חוסם, ו-ActivityBank ינסה שוב אוטומטית. (3) **Tokens** — לא הייתה מניעה של הענקה כפולה לאותו ילד+יום. נוספה פונקציה `hasTokenEventForDate` שמונעת יצירת אירוע כפול בצד השרת, ומציגה הודעה מתאימה בקליינט.
+
+### תיקון: Onboarding לא מתקדם ללא יצירת ילד + race condition ברפלקציה
+**קבצים:** `client/src/pages/Onboarding.tsx`, `client/src/pages/Reflection.tsx`
+**פירוט:** (1) **Onboarding** — אם יצירת ילד נכשלה בשלב 0, ה-catch block עדיין התקדם לשלב הבא. המשתמש היה מסיים onboarding בלי רשומת ילד, והאפליקציה נשברת כי `ChildSelector` מחזיר null. עכשיו שלב 0 חוסם התקדמות בכשלון ומציג הודעת שגיאה. (2) **Reflection** — אם המשתמש שלח רפלקציה והחליף ילד לפני שה-mutation הסתיים, `onSuccess` הפעיל `setSubmitted(true)` אחרי שה-`useEffect` כבר איפס אותו — מה שהציג "כל הכבוד" לילד הלא נכון. נוסף `submittedForChildRef` שמוודא שה-callback רק מסמן submitted אם ה-childId הפעיל עדיין תואם.
+
+### תיקון יצירת ילדים כפולים בניווט אחורה ב-Onboarding
+**קבצים:** `client/src/pages/Onboarding.tsx`
+**פירוט:** לחיצה על "הבא" בשלב 0, חזרה ל-0 ולחיצה שנייה על "הבא" יצרה ילד כפול + פעילויות כפולות. נוסף guard `createdChildId` שמונע יצירה חוזרת אם הילד כבר נוצר.
+
+### הסרת קוד מת — updateTokenBalance ו-getChild
+**קבצים:** `server/db.ts`
+**פירוט:** הסרת `updateTokenBalance` — פונקציה שכתבה ל-`users.tokenBalance` שכבר לא נקרא אחרי המעבר לחישוב דינמי מ-tokenEvents. הוסרה גם `getChild` שלא נקראה מאף מקום בקוד. כמו כן הוסרה הקריאה ל-`updateTokenBalance` מתוך `createTokenEvent`.
+
+### תיקון יתרת אסימונים — חישוב per-child במקום גלובלי
+**קבצים:** `server/db.ts`, `server/routers.ts`, `client/src/pages/Tokens.tsx`, `server/routers.test.ts`
+**פירוט:** יתרת האסימונים הייתה מאוחסנת כערך גלובלי בטבלת `users.tokenBalance`, כך שכל הילדים ראו את אותה יתרה למרות שהיסטוריית האירועים הייתה נפרדת. הוחלף לחישוב דינמי מ-`SUM(tokenEvents.amount)` עם סינון per-child. פונקציה חדשה `getTokenBalance(userId, childId?)` ב-db.ts, הראוטר `tokens.balance` מקבל `childId` אופציונלי, והקליינט מעביר `activeChildId`.
+
+### תיקון באגים בהחלפת ילד פעיל
+**קבצים:** `client/src/pages/ScheduleBuilder.tsx`, `client/src/pages/Reflection.tsx`, `client/src/pages/ActivityBank.tsx`
+**פירוט:** תיקון 4 באגים שהתגלו בפיצ'ר ריבוי הילדים:
+1. **ScheduleBuilder** — `toggleActivity` callback לכד `activeChildId` ישן בגלל שחסר ב-dependency array. נוסף ל-deps.
+2. **ScheduleBuilder** — ה-state המקומי (`scheduleItems`) לא התאפס בעת החלפת ילד — הלוח הזמנים הישן נשאר. הוחלף מ-flag `initialized` ל-`useEffect` שמגיב ל-`scheduleKey` ו-`activeChildId`.
+3. **Reflection** — `submitted` state לא התאפס בעת מעבר ילד, מה שהציג "כל הכבוד" גם לילד שלא מילא רפלקציה. נוסף `useEffect` שמאפס state.
+4. **ActivityBank** — auto-seed רץ עם `childId: undefined` כש-context עוד לא נטען, ויצר פעילויות יתומות. נוסף guard `activeChildId != null` ואיפוס `seedAttempted` בהחלפת ילד.
+
+### תמיכה בריבוי ילדים לחשבון הורה אחד
+**קבצים:** `drizzle/schema.ts`, `drizzle/0003_add_children_table.sql`, `server/db.ts`, `server/routers.ts`, `client/src/contexts/ChildContext.tsx`, `client/src/components/ChildSelector.tsx`, `client/src/components/AppHeader.tsx`, `client/src/pages/ChildrenManager.tsx`, `client/src/pages/Onboarding.tsx`, `client/src/pages/Home.tsx`, `client/src/pages/ScheduleBuilder.tsx`, `client/src/pages/ActivityBank.tsx`, `client/src/pages/Reflection.tsx`, `client/src/pages/Tokens.tsx`, `client/src/App.tsx`
+**פירוט:** הוספת טבלת `children` חדשה שמאפשרת להורה אחד לנהל כמה ילדים עם מייל הרשמה אחד. כל ילד מקבל מאגר פעילויות, לוח זמנים, רפלקציות ואסימונים נפרדים. שינויים עיקריים:
+- **DB:** טבלת `children` (id, userId, name, avatarColor, sortOrder). עמודת `childId` nullable נוספה ל-`activities`, `schedules`, `reflections`, `tokenEvents`. מיגרציית SQL מעבירה נתונים קיימים.
+- **Server:** ראוטר `children` חדש (list/create/update/delete). כל הראוטרים הקיימים (activities, schedule, reflection, tokens) מקבלים `childId` אופציונלי ומסננים לפיו. פונקציות DB עודכנו בהתאם.
+- **Client:** `ChildContext` + `useActiveChild` hook — שומר את הילד הפעיל ב-localStorage. `ChildSelector` ב-header מאפשר מעבר בין ילדים. דף `ChildrenManager` לניהול ילדים (הוספה/עריכה/מחיקה). Onboarding יוצר רשומת ילד + seed פעילויות. כל הדפים (ScheduleBuilder, ActivityBank, Reflection, Tokens, Home) עודכנו להעביר `childId` לשאילתות.
+- **תאימות אחורה:** `childId` הוא nullable — משתמשים קיימים ממשיכים לעבוד. המיגרציה יוצרת ילד ברירת מחדל למשתמשים קיימים ומקשרת את הנתונים שלהם.
+
+---
+
 ## [2026-03-11]
 
 ### תיקון VAPID subject — הוספת mailto: אוטומטית

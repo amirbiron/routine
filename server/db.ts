@@ -1,7 +1,8 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sum, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
+  children, InsertChild,
   activities, InsertActivity, Activity,
   schedules, InsertSchedule,
   reflections, InsertReflection,
@@ -94,21 +95,52 @@ export async function updateUserProfile(userId: number, data: { childName?: stri
   await db.update(users).set(data).where(eq(users.id, userId));
 }
 
-export async function updateTokenBalance(userId: number, amount: number) {
+// ─── Children ────────────────────────────────────────────────
+export async function getChildren(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(children).where(eq(children.userId, userId)).orderBy(children.sortOrder);
+}
+
+export async function verifyChildOwnership(childId: number, userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const rows = await db.select({ id: children.id }).from(children)
+    .where(and(eq(children.id, childId), eq(children.userId, userId)));
+  return rows.length > 0;
+}
+
+export async function createChild(data: InsertChild) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(children).values(data);
+  return result[0].insertId;
+}
+
+export async function updateChild(id: number, userId: number, data: Partial<Pick<InsertChild, "name" | "avatarColor" | "sortOrder">>) {
   const db = await getDb();
   if (!db) return;
-  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-  if (user.length > 0) {
-    const newBalance = Math.max(0, (user[0].tokenBalance || 0) + amount);
-    await db.update(users).set({ tokenBalance: newBalance }).where(eq(users.id, userId));
-  }
+  await db.update(children).set(data).where(and(eq(children.id, id), eq(children.userId, userId)));
+}
+
+export async function deleteChild(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  // מחיקת כל הנתונים של הילד
+  await db.delete(activities).where(and(eq(activities.userId, userId), eq(activities.childId, id)));
+  await db.delete(schedules).where(and(eq(schedules.userId, userId), eq(schedules.childId, id)));
+  await db.delete(reflections).where(and(eq(reflections.userId, userId), eq(reflections.childId, id)));
+  await db.delete(tokenEvents).where(and(eq(tokenEvents.userId, userId), eq(tokenEvents.childId, id)));
+  await db.delete(children).where(and(eq(children.id, id), eq(children.userId, userId)));
 }
 
 // ─── Activities ──────────────────────────────────────────────
-export async function getActivities(userId: number) {
+export async function getActivities(userId: number, childId?: number | null) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(activities).where(eq(activities.userId, userId)).orderBy(activities.sortOrder);
+  const conditions = [eq(activities.userId, userId)];
+  if (childId != null) conditions.push(eq(activities.childId, childId));
+  return db.select().from(activities).where(and(...conditions)).orderBy(activities.sortOrder);
 }
 
 export async function createActivity(data: InsertActivity) {
@@ -138,17 +170,19 @@ export async function bulkCreateActivities(items: InsertActivity[]) {
 }
 
 // ─── Schedules ───────────────────────────────────────────────
-export async function getSchedule(userId: number, date: string) {
+export async function getSchedule(userId: number, date: string, childId?: number | null) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(schedules).where(and(eq(schedules.userId, userId), eq(schedules.date, date))).limit(1);
+  const conditions = [eq(schedules.userId, userId), eq(schedules.date, date)];
+  if (childId != null) conditions.push(eq(schedules.childId, childId));
+  const result = await db.select().from(schedules).where(and(...conditions)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
 
 export async function upsertSchedule(data: InsertSchedule) {
   const db = await getDb();
   if (!db) return null;
-  const existing = await getSchedule(data.userId, data.date);
+  const existing = await getSchedule(data.userId, data.date, data.childId);
   if (existing) {
     await db.update(schedules).set({ items: data.items, isCompleted: data.isCompleted }).where(eq(schedules.id, existing.id));
     return existing.id;
@@ -159,39 +193,79 @@ export async function upsertSchedule(data: InsertSchedule) {
 }
 
 // ─── Reflections ─────────────────────────────────────────────
-export async function getReflection(userId: number, date: string) {
+export async function getReflection(userId: number, date: string, childId?: number | null) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(reflections).where(and(eq(reflections.userId, userId), eq(reflections.date, date))).limit(1);
+  const conditions = [eq(reflections.userId, userId), eq(reflections.date, date)];
+  if (childId != null) conditions.push(eq(reflections.childId, childId));
+  const result = await db.select().from(reflections).where(and(...conditions)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
 
-export async function createReflection(data: InsertReflection) {
+export async function upsertReflection(data: InsertReflection) {
   const db = await getDb();
   if (!db) return null;
+  // בדיקה אם כבר קיימת רפלקציה לאותו user+date+child — עדכון במקום יצירה כפולה
+  const conditions = [eq(reflections.userId, data.userId!), eq(reflections.date, data.date)];
+  // התאמה מדויקת: childId ספציפי או IS NULL — מניעת דריסה בין ילדים שונים
+  if (data.childId != null) {
+    conditions.push(eq(reflections.childId, data.childId));
+  } else {
+    conditions.push(isNull(reflections.childId));
+  }
+  const existing = await db.select({ id: reflections.id }).from(reflections).where(and(...conditions)).limit(1);
+  if (existing.length > 0) {
+    const { userId, date, childId, ...updateFields } = data;
+    await db.update(reflections).set(updateFields).where(eq(reflections.id, existing[0].id));
+    return existing[0].id;
+  }
   const result = await db.insert(reflections).values(data);
   return result[0].insertId;
 }
 
-export async function getRecentReflections(userId: number, limit: number = 7) {
+export async function getRecentReflections(userId: number, limit: number = 7, childId?: number | null) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(reflections).where(eq(reflections.userId, userId)).orderBy(desc(reflections.date)).limit(limit);
+  const conditions = [eq(reflections.userId, userId)];
+  if (childId != null) conditions.push(eq(reflections.childId, childId));
+  return db.select().from(reflections).where(and(...conditions)).orderBy(desc(reflections.date)).limit(limit);
 }
 
 // ─── Token Events ────────────────────────────────────────────
+
+/** חישוב יתרת אסימונים לפי סכום אירועים — מחושב per-child כשמועבר childId */
+export async function getTokenBalance(userId: number, childId?: number | null): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const conditions = [eq(tokenEvents.userId, userId)];
+  if (childId != null) conditions.push(eq(tokenEvents.childId, childId));
+  const result = await db.select({ total: sum(tokenEvents.amount) }).from(tokenEvents).where(and(...conditions));
+  return Number(result[0]?.total) || 0;
+}
+
 export async function createTokenEvent(data: InsertTokenEvent) {
   const db = await getDb();
   if (!db) return null;
   const result = await db.insert(tokenEvents).values(data);
-  await updateTokenBalance(data.userId, data.amount);
   return result[0].insertId;
 }
 
-export async function getTokenEvents(userId: number, limit: number = 20) {
+/** בדיקה אם כבר קיים אירוע אסימון לילד+תאריך נתון */
+export async function hasTokenEventForDate(userId: number, date: string, childId?: number | null): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const conditions = [eq(tokenEvents.userId, userId), eq(tokenEvents.date, date)];
+  if (childId != null) conditions.push(eq(tokenEvents.childId, childId));
+  const result = await db.select({ id: tokenEvents.id }).from(tokenEvents).where(and(...conditions)).limit(1);
+  return result.length > 0;
+}
+
+export async function getTokenEvents(userId: number, limit: number = 20, childId?: number | null) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(tokenEvents).where(eq(tokenEvents.userId, userId)).orderBy(desc(tokenEvents.createdAt)).limit(limit);
+  const conditions = [eq(tokenEvents.userId, userId)];
+  if (childId != null) conditions.push(eq(tokenEvents.childId, childId));
+  return db.select().from(tokenEvents).where(and(...conditions)).orderBy(desc(tokenEvents.createdAt)).limit(limit);
 }
 
 // ─── Push Subscriptions ─────────────────────────────────────

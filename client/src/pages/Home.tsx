@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useActiveChild } from "@/contexts/ChildContext";
 import { Button } from "@/components/ui/button";
 import { getLoginUrl } from "@/const";
 import { motion } from "framer-motion";
@@ -26,6 +27,7 @@ const FEATURE_CARDS = [
 
 export default function Home() {
   const { user, loading, isAuthenticated } = useAuth();
+  const { activeChild } = useActiveChild();
 
   if (loading) {
     return (
@@ -86,7 +88,7 @@ export default function Home() {
               className="mt-8"
             >
               <p className="font-hand text-2xl">
-                שלום{(user as any)?.childName ? ` ${(user as any).childName}` : ""}!
+                שלום{activeChild?.name ? ` ${activeChild.name}` : (user as any)?.childName ? ` ${(user as any).childName}` : ""}!
               </p>
             </motion.div>
           )}

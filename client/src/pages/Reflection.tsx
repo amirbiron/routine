@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { getTodayIsrael } from "@shared/dateUtils";
+import { useActiveChild } from "@/contexts/ChildContext";
 
 const QUESTIONS = [
   { key: "mood", label: "?איך היה היום", type: "mood" },
@@ -18,11 +19,19 @@ const QUESTIONS = [
 
 export default function Reflection() {
   const [date] = useState(getTodayIsrael);
-  const { data: existingReflection, isLoading } = trpc.reflection.get.useQuery({ date });
+  const { activeChildId } = useActiveChild();
+  const utils = trpc.useUtils();
+  const { data: existingReflection, isLoading } = trpc.reflection.get.useQuery({ date, childId: activeChildId });
+  // שמירת ה-childId שעבורו נשלחה המוטציה — רק אם עדיין פעיל, מסמנים submitted
+  const submittedForChildRef = useRef<number | undefined>(undefined);
   const saveMutation = trpc.reflection.save.useMutation({
     onSuccess: () => {
-      toast.success("הרפלקציה נשמרה! כל הכבוד!");
-      setSubmitted(true);
+      utils.reflection.get.invalidate();
+      utils.reflection.recent.invalidate();
+      if (submittedForChildRef.current === activeChildId) {
+        toast.success("הרפלקציה נשמרה! כל הכבוד!");
+        setSubmitted(true);
+      }
     },
   });
 
@@ -36,6 +45,17 @@ export default function Reflection() {
     tomorrowWish: "",
   });
 
+  // איפוס state בעת החלפת ילד פעיל
+  const prevChildIdRef = useRef(activeChildId);
+  useEffect(() => {
+    if (prevChildIdRef.current !== activeChildId) {
+      prevChildIdRef.current = activeChildId;
+      setSubmitted(false);
+      setStep(0);
+      setAnswers({ mood: "", enjoyedMost: "", hardest: "", whatHelped: "", tomorrowWish: "" });
+    }
+  }, [activeChildId]);
+
   const currentQ = QUESTIONS[step];
   const isLastStep = step === QUESTIONS.length - 1;
 
@@ -47,8 +67,10 @@ export default function Reflection() {
   };
 
   const handleSubmit = async () => {
+    submittedForChildRef.current = activeChildId;
     await saveMutation.mutateAsync({
       date,
+      childId: activeChildId,
       mood: (answers.mood as Mood) || undefined,
       enjoyedMost: answers.enjoyedMost || undefined,
       hardest: answers.hardest || undefined,

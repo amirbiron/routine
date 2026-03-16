@@ -6,24 +6,20 @@ import { motion } from "framer-motion";
 import { Star, Trophy, Sparkles } from "lucide-react";
 import { Celebration } from "@/components/Celebration";
 import { getTodayIsrael } from "@shared/dateUtils";
+import { useActiveChild } from "@/contexts/ChildContext";
 
 export default function Tokens() {
   const [date] = useState(getTodayIsrael);
   const utils = trpc.useUtils();
-  const { data: balanceData } = trpc.tokens.balance.useQuery();
-  const { data: history = [] } = trpc.tokens.history.useQuery({ limit: 20 });
-  const { data: schedule } = trpc.schedule.get.useQuery({ date });
+  const { activeChildId } = useActiveChild();
+  const { data: balanceData } = trpc.tokens.balance.useQuery({ childId: activeChildId });
+  const { data: history = [] } = trpc.tokens.history.useQuery({ limit: 20, childId: activeChildId });
+  const { data: schedule } = trpc.schedule.get.useQuery({ date, childId: activeChildId });
 
   const [celebrating, setCelebrating] = useState(false);
   const [lastTokensEarned, setLastTokensEarned] = useState(0);
 
-  const awardMutation = trpc.tokens.award.useMutation({
-    onSuccess: () => {
-      utils.tokens.balance.invalidate();
-      utils.tokens.history.invalidate();
-      setCelebrating(true);
-    },
-  });
+  const awardMutation = trpc.tokens.award.useMutation();
 
   const scheduleItems = (schedule?.items as any[]) || [];
   const completedCount = scheduleItems.filter((i: any) => i.completed).length;
@@ -37,11 +33,19 @@ export default function Tokens() {
       ? "!השלמת את כל סדר היום"
       : `השלמת ${completedCount} מתוך ${totalCount} פעילויות`;
 
-    await awardMutation.mutateAsync({
+    const result = await awardMutation.mutateAsync({
       amount: tokensEarned,
       reason,
       date,
+      childId: activeChildId,
     });
+    if (result.alreadyAwarded) {
+      toast.error("כבר קיבלת אסימונים היום!");
+      return;
+    }
+    utils.tokens.balance.invalidate();
+    utils.tokens.history.invalidate();
+    setCelebrating(true);
     toast.success(`!קיבלת ${tokensEarned} אסימונים`);
   };
 

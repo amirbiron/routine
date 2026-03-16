@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
+import { useActiveChild } from "@/contexts/ChildContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 const STEPS = [
   {
@@ -37,25 +39,44 @@ interface OnboardingProps {
 export default function Onboarding({ onComplete }: OnboardingProps) {
   const [step, setStep] = useState(0);
   const [childName, setChildName] = useState("");
+  const [createdChildId, setCreatedChildId] = useState<number | null>(null);
 
   const updateProfile = trpc.profile.update.useMutation();
+  const createChild = trpc.children.create.useMutation();
   const seedActivities = trpc.activities.seedDefaults.useMutation();
+  const { refetch, setActiveChildId } = useActiveChild();
 
   const handleNext = async () => {
     try {
-      if (step === 0 && childName.trim()) {
+      if (step === 0 && childName.trim() && createdChildId === null) {
+        // יצירת רשומת ילד — שלב קריטי, בלעדיו האפליקציה לא תעבוד
         await updateProfile.mutateAsync({ childName: childName.trim() });
+        const result = await createChild.mutateAsync({ name: childName.trim() });
+        if (result.id) {
+          setCreatedChildId(result.id);
+          setActiveChildId(result.id);
+          // seed לא קריטי — ActivityBank ינסה שוב אוטומטית
+          try {
+            await seedActivities.mutateAsync({ childId: result.id });
+          } catch (seedError) {
+            console.warn("Seed defaults failed, will retry in ActivityBank:", seedError);
+          }
+        }
       }
       if (step < STEPS.length - 1) {
         setStep(step + 1);
       } else {
-        await seedActivities.mutateAsync();
         await updateProfile.mutateAsync({ onboardingDone: true });
+        await refetch();
         onComplete();
       }
     } catch (error) {
       console.error("Onboarding error:", error);
-      // Still allow proceeding on error
+      // שלב 0 — יצירת ילד הכרחית, אסור להתקדם בלעדיה
+      if (step === 0 && createdChildId === null) {
+        toast.error("שגיאה ביצירת הפרופיל, נסו שוב");
+        return;
+      }
       if (step < STEPS.length - 1) {
         setStep(step + 1);
       } else {
@@ -164,7 +185,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
               <Button
                 onClick={handleNext}
-                disabled={!canProceed || updateProfile.isPending || seedActivities.isPending}
+                disabled={!canProceed || updateProfile.isPending || createChild.isPending || seedActivities.isPending}
                 className="sketch-btn bg-sketch-coral text-white border-sketch-charcoal font-hand text-lg"
               >
                 {step === STEPS.length - 1 ? "!יאללה, נתחיל" : "הבא"}

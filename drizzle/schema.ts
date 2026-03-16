@@ -19,9 +19,23 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+// טבלת ילדים — הורה אחד יכול לנהל כמה ילדים
+export const children = mysqlTable("children", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  avatarColor: varchar("avatarColor", { length: 20 }).default("coral").notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Child = typeof children.$inferSelect;
+export type InsertChild = typeof children.$inferInsert;
+
 export const activities = mysqlTable("activities", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
+  childId: int("childId"),
   title: varchar("title", { length: 200 }).notNull(),
   icon: varchar("icon", { length: 50 }).default("star").notNull(),
   color: varchar("color", { length: 20 }).default("coral").notNull(),
@@ -42,6 +56,7 @@ export type InsertActivity = typeof activities.$inferInsert;
 export const schedules = mysqlTable("schedules", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
+  childId: int("childId"),
   date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
   items: json("items").notNull(), // [{activityId, section, completed, order, ...}]
   isCompleted: boolean("isCompleted").default(false).notNull(),
@@ -55,6 +70,7 @@ export type InsertSchedule = typeof schedules.$inferInsert;
 export const reflections = mysqlTable("reflections", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
+  childId: int("childId"),
   scheduleId: int("scheduleId"),
   date: varchar("date", { length: 10 }).notNull(),
   enjoyedMost: text("enjoyedMost"),
@@ -99,6 +115,7 @@ export type InsertReminderSettings = typeof reminderSettings.$inferInsert;
 export const tokenEvents = mysqlTable("tokenEvents", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
+  childId: int("childId"),
   amount: int("amount").notNull(),
   reason: varchar("reason", { length: 200 }).notNull(),
   date: varchar("date", { length: 10 }).notNull(),
