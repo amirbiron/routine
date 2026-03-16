@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### תיקון: refetch אחרי toggle דורס שינויים מקומיים שלא נשמרו בלוח הזמנים
+**קבצים:** `client/src/pages/ScheduleBuilder.tsx`
+**פירוט:** כאשר המשתמש הוסיף/מחק/גרר פעילויות ואז סימן פעילות כהושלמה (toggle), ה-`onSuccess` של `toggleMutation` הפעיל `invalidate()` שגרם ל-effect לדרוס את השינויים המקומיים שלא נשמרו. נוסף דגל `dirty` שנדלק בהוספה (`addActivity`), מחיקה (`removeActivity`) וגרירה (`handleDragEnd`), ומונע מה-effect לסנכרן מהשרת כל עוד יש שינויים מקומיים. הדגל מתאפס בשמירה מוצלחת (`saveMutation.onSuccess`) ובהחלפת ילד פעיל.
+
 ### תיקון: אנימציית חגיגה מופעלת גם כשהענקת אסימונים נדחית
 **קבצים:** `client/src/pages/Tokens.tsx`
 **פירוט:** ה-callback `onSuccess` של mutation הענקת אסימונים הפעיל `setCelebrating(true)` ללא תנאי, גם כשהשרת החזיר `alreadyAwarded: true`. המשתמש ראה חגיגה + הודעת שגיאה בו-זמנית. הועבר הלוגיקה (celebration + invalidation + toast) מ-`onSuccess` לתוך `handleAward` — רק אחרי בדיקת `alreadyAwarded`.
