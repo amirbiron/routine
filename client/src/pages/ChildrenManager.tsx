@@ -85,6 +85,11 @@ export default function ChildrenManager() {
       toast.error("לא ניתן למחוק את הילד האחרון");
       return;
     }
+    // אם מוחקים את הילד הפעיל — מעבר לילד אחר לפני מחיקה
+    if (id === activeChild?.id) {
+      const next = children.find(c => c.id !== id);
+      if (next) setActiveChildId(next.id);
+    }
     await deleteMutation.mutateAsync({ id });
   };
 

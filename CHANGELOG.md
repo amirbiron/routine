@@ -8,6 +8,26 @@
 
 ## [2026-03-16]
 
+### תיקון: רפלקציה יוצרת שורות כפולות במקום עדכון
+**קבצים:** `server/db.ts`, `server/routers.ts`
+**פירוט:** `reflection.save` קרא ל-`createReflection` (INSERT) בכל שמירה, מה שיצר שורות כפולות לאותו user+date+child. הוחלף ב-`upsertReflection` שבודק אם כבר קיימת רפלקציה ומעדכן אותה במקום ליצור חדשה.
+
+### תיקון: toggleItem מחזיר תשובה לא עקבית כשאין לוח זמנים
+**קבצים:** `server/routers.ts`
+**פירוט:** `schedule.toggleItem` החזיר `{ success: false }` ללא שדה `allCompleted` כשלא נמצא לוח זמנים. הלקוח ניגש ל-`result.allCompleted` שהיה `undefined`. נוסף `allCompleted: false` לתשובה.
+
+### תיקון: מחיקת ילד אחרון זורקת Error רגיל במקום TRPCError
+**קבצים:** `server/routers.ts`
+**פירוט:** `children.delete` זרק `new Error()` שגרם ל-tRPC להחזיר 500 INTERNAL_SERVER_ERROR. הוחלף ב-`TRPCError({ code: "BAD_REQUEST" })` כדי שהלקוח יקבל שגיאה ברורה עם קוד 400.
+
+### תיקון: auto-seed פעילויות רץ בזמן render במקום ב-effect
+**קבצים:** `client/src/pages/ActivityBank.tsx`
+**פירוט:** לוגיקת ה-auto-seed הפעילה `setSeedAttempted` ו-`seedMutation.mutate` ישירות בגוף הרנדור של הקומפוננטה, מה שגורם ל-React להזהיר על עדכון state בזמן render. הועבר ל-`useEffect`.
+
+### תיקון: מחיקת ילד פעיל משאירה activeChildId לא תקין
+**קבצים:** `client/src/pages/ChildrenManager.tsx`
+**פירוט:** כשמוחקים את הילד הנוכחי, `activeChildId` נשאר על ה-ID שנמחק עד שה-refetch חוזר. נוסף מעבר לילד אחר לפני ביצוע המחיקה, כך ש-localStorage ו-context מתעדכנים מיד.
+
 ### אבטחה: בדיקת בעלות על childId במוטציות בצד השרת
 **קבצים:** `server/db.ts`, `server/routers.ts`
 **פירוט:** כל המוטציות שמקבלות `childId` מהלקוח (activities.create, activities.seedDefaults, schedule.save, schedule.toggleItem, reflection.save, tokens.award) לא אימתו שה-childId שייך למשתמש המחובר. נוספה פונקציית `verifyChildOwnership` ב-db.ts ו-`assertChildOwnership` ב-routers.ts שזורקת TRPCError FORBIDDEN אם הילד לא שייך למשתמש. הבדיקה מופעלת בתחילת כל מוטציה — רק אם childId מסופק (undefined עובר בלי בדיקה לתאימות אחורה).

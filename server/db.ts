@@ -202,9 +202,18 @@ export async function getReflection(userId: number, date: string, childId?: numb
   return result.length > 0 ? result[0] : null;
 }
 
-export async function createReflection(data: InsertReflection) {
+export async function upsertReflection(data: InsertReflection) {
   const db = await getDb();
   if (!db) return null;
+  // בדיקה אם כבר קיימת רפלקציה לאותו user+date+child — עדכון במקום יצירה כפולה
+  const conditions = [eq(reflections.userId, data.userId!), eq(reflections.date, data.date)];
+  if (data.childId != null) conditions.push(eq(reflections.childId, data.childId));
+  const existing = await db.select({ id: reflections.id }).from(reflections).where(and(...conditions)).limit(1);
+  if (existing.length > 0) {
+    const { userId, date, childId, ...updateFields } = data;
+    await db.update(reflections).set(updateFields).where(eq(reflections.id, existing[0].id));
+    return existing[0].id;
+  }
   const result = await db.insert(reflections).values(data);
   return result[0].insertId;
 }

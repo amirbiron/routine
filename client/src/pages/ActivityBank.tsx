@@ -43,14 +43,12 @@ export default function ActivityBank() {
   }, [activeChildId]);
 
   // Auto-seed defaults — רק אם activeChildId כבר נטען
-  if (!isLoading && !seedAttempted && activities.length === 0 && activeChildId != null) {
-    setSeedAttempted(true);
-    try {
+  useEffect(() => {
+    if (!isLoading && !seedAttempted && activities.length === 0 && activeChildId != null) {
+      setSeedAttempted(true);
       seedMutation.mutate({ childId: activeChildId });
-    } catch (e) {
-      console.error("Failed to seed defaults:", e);
     }
-  }
+  }, [isLoading, seedAttempted, activities.length, activeChildId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);

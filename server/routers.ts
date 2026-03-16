@@ -88,7 +88,7 @@ export const appRouter = router({
         // לפחות ילד אחד חייב להישאר
         const existing = await db.getChildren(ctx.user.id);
         if (existing.length <= 1) {
-          throw new Error("לא ניתן למחוק את הילד האחרון");
+          throw new TRPCError({ code: "BAD_REQUEST", message: "לא ניתן למחוק את הילד האחרון" });
         }
         await db.deleteChild(input.id, ctx.user.id);
         return { success: true };
@@ -216,7 +216,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         await assertChildOwnership(input.childId, ctx.user.id);
         const schedule = await db.getSchedule(ctx.user.id, input.date, input.childId);
-        if (!schedule) return { success: false };
+        if (!schedule) return { success: false, allCompleted: false };
         const items = (schedule.items as any[]).map((item: any) =>
           item.activityId === input.activityId ? { ...item, completed: input.completed } : item
         );
@@ -251,7 +251,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         await assertChildOwnership(input.childId, ctx.user.id);
-        const id = await db.createReflection({
+        const id = await db.upsertReflection({
           userId: ctx.user.id,
           childId: input.childId,
           date: input.date,
