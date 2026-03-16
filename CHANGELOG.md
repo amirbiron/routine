@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### תיקוני באגים: סנכרון לוח זמנים, seed ב-onboarding, הענקת אסימונים כפולה
+**קבצים:** `client/src/pages/ScheduleBuilder.tsx`, `client/src/pages/Onboarding.tsx`, `server/db.ts`, `server/routers.ts`, `client/src/pages/Tokens.tsx`
+**פירוט:** (1) **ScheduleBuilder** — ה-effect לאתחול scheduleItems השתמש ב-`existingSchedule.id` כ-key, שלא משתנה כשפריטים מתעדכנים (toggleItem). הוחלף ל-`updatedAt` שמשתנה בכל upsert. (2) **Onboarding** — אם seedActivities נכשל אחרי שהילד כבר נוצר, ה-catch block חסם התקדמות ו-seed לא נוסה שנית (כי createdChildId כבר מלא). עכשיו seed עטוף ב-try/catch נפרד — כישלון seed לא חוסם, ו-ActivityBank ינסה שוב אוטומטית. (3) **Tokens** — לא הייתה מניעה של הענקה כפולה לאותו ילד+יום. נוספה פונקציה `hasTokenEventForDate` שמונעת יצירת אירוע כפול בצד השרת, ומציגה הודעה מתאימה בקליינט.
+
 ### תיקון: Onboarding לא מתקדם ללא יצירת ילד + race condition ברפלקציה
 **קבצים:** `client/src/pages/Onboarding.tsx`, `client/src/pages/Reflection.tsx`
 **פירוט:** (1) **Onboarding** — אם יצירת ילד נכשלה בשלב 0, ה-catch block עדיין התקדם לשלב הבא. המשתמש היה מסיים onboarding בלי רשומת ילד, והאפליקציה נשברת כי `ChildSelector` מחזיר null. עכשיו שלב 0 חוסם התקדמות בכשלון ומציג הודעת שגיאה. (2) **Reflection** — אם המשתמש שלח רפלקציה והחליף ילד לפני שה-mutation הסתיים, `onSuccess` הפעיל `setSubmitted(true)` אחרי שה-`useEffect` כבר איפס אותו — מה שהציג "כל הכבוד" לילד הלא נכון. נוסף `submittedForChildRef` שמוודא שה-callback רק מסמן submitted אם ה-childId הפעיל עדיין תואם.

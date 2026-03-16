@@ -54,7 +54,12 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         const result = await createChild.mutateAsync({ name: childName.trim() });
         if (result.id) {
           setCreatedChildId(result.id);
-          await seedActivities.mutateAsync({ childId: result.id });
+          // seed לא קריטי — ActivityBank ינסה שוב אוטומטית
+          try {
+            await seedActivities.mutateAsync({ childId: result.id });
+          } catch (seedError) {
+            console.warn("Seed defaults failed, will retry in ActivityBank:", seedError);
+          }
         }
       }
       if (step < STEPS.length - 1) {
@@ -67,7 +72,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     } catch (error) {
       console.error("Onboarding error:", error);
       // שלב 0 — יצירת ילד הכרחית, אסור להתקדם בלעדיה
-      if (step === 0) {
+      if (step === 0 && createdChildId === null) {
         toast.error("שגיאה ביצירת הפרופיל, נסו שוב");
         return;
       }

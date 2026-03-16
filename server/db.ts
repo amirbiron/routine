@@ -228,6 +228,16 @@ export async function createTokenEvent(data: InsertTokenEvent) {
   return result[0].insertId;
 }
 
+/** בדיקה אם כבר קיים אירוע אסימון לילד+תאריך נתון */
+export async function hasTokenEventForDate(userId: number, date: string, childId?: number | null): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const conditions = [eq(tokenEvents.userId, userId), eq(tokenEvents.date, date)];
+  if (childId != null) conditions.push(eq(tokenEvents.childId, childId));
+  const result = await db.select({ id: tokenEvents.id }).from(tokenEvents).where(and(...conditions)).limit(1);
+  return result.length > 0;
+}
+
 export async function getTokenEvents(userId: number, limit: number = 20, childId?: number | null) {
   const db = await getDb();
   if (!db) return [];

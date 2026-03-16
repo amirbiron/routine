@@ -233,7 +233,8 @@ export default function ScheduleBuilder() {
   }, [activeChildId]);
 
   // אתחול מלוח זמנים קיים — רץ מחדש כשהנתונים מתעדכנים (כולל לאחר החלפת ילד)
-  const scheduleKey = existingSchedule?.id ?? null;
+  // updatedAt משתנה בכל upsert, כך שגם עדכוני items (כמו toggleItem) מעדכנים את ה-state המקומי
+  const scheduleVersion = existingSchedule?.updatedAt?.toString() ?? null;
   useEffect(() => {
     if (isLoading) return;
     if (existingSchedule?.items) {
@@ -247,7 +248,7 @@ export default function ScheduleBuilder() {
     } else {
       setScheduleItems([]);
     }
-  }, [scheduleKey, isLoading]);
+  }, [scheduleVersion, isLoading]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

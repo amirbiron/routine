@@ -39,12 +39,16 @@ export default function Tokens() {
       ? "!השלמת את כל סדר היום"
       : `השלמת ${completedCount} מתוך ${totalCount} פעילויות`;
 
-    await awardMutation.mutateAsync({
+    const result = await awardMutation.mutateAsync({
       amount: tokensEarned,
       reason,
       date,
       childId: activeChildId,
     });
+    if (result.alreadyAwarded) {
+      toast.error("כבר קיבלת אסימונים היום!");
+      return;
+    }
     toast.success(`!קיבלת ${tokensEarned} אסימונים`);
   };
 

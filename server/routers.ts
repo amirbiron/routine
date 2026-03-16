@@ -272,6 +272,11 @@ export const appRouter = router({
         childId: optionalChildId,
       }))
       .mutation(async ({ ctx, input }) => {
+        // מניעת הענקה כפולה לאותו ילד באותו יום
+        const alreadyAwarded = await db.hasTokenEventForDate(ctx.user.id, input.date, input.childId);
+        if (alreadyAwarded) {
+          return { success: false, alreadyAwarded: true };
+        }
         await db.createTokenEvent({
           userId: ctx.user.id,
           childId: input.childId,
@@ -279,7 +284,7 @@ export const appRouter = router({
           reason: input.reason,
           date: input.date,
         });
-        return { success: true };
+        return { success: true, alreadyAwarded: false };
       }),
 
     history: protectedProcedure
