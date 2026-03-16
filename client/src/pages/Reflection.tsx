@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,10 +21,14 @@ export default function Reflection() {
   const [date] = useState(getTodayIsrael);
   const { activeChildId } = useActiveChild();
   const { data: existingReflection, isLoading } = trpc.reflection.get.useQuery({ date, childId: activeChildId });
+  // שמירת ה-childId שעבורו נשלחה המוטציה — רק אם עדיין פעיל, מסמנים submitted
+  const submittedForChildRef = useRef<number | undefined>(undefined);
   const saveMutation = trpc.reflection.save.useMutation({
     onSuccess: () => {
-      toast.success("הרפלקציה נשמרה! כל הכבוד!");
-      setSubmitted(true);
+      if (submittedForChildRef.current === activeChildId) {
+        toast.success("הרפלקציה נשמרה! כל הכבוד!");
+        setSubmitted(true);
+      }
     },
   });
 
@@ -60,6 +64,7 @@ export default function Reflection() {
   };
 
   const handleSubmit = async () => {
+    submittedForChildRef.current = activeChildId;
     await saveMutation.mutateAsync({
       date,
       childId: activeChildId,

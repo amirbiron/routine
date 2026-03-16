@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { useActiveChild } from "@/contexts/ChildContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 const STEPS = [
   {
@@ -48,10 +49,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const handleNext = async () => {
     try {
       if (step === 0 && childName.trim() && createdChildId === null) {
-        // יצירת רשומת ילד + עדכון childName על המשתמש (תאימות אחורה)
+        // יצירת רשומת ילד — שלב קריטי, בלעדיו האפליקציה לא תעבוד
         await updateProfile.mutateAsync({ childName: childName.trim() });
         const result = await createChild.mutateAsync({ name: childName.trim() });
-        // seed פעילויות ברירת מחדל לילד
         if (result.id) {
           setCreatedChildId(result.id);
           await seedActivities.mutateAsync({ childId: result.id });
@@ -66,6 +66,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       }
     } catch (error) {
       console.error("Onboarding error:", error);
+      // שלב 0 — יצירת ילד הכרחית, אסור להתקדם בלעדיה
+      if (step === 0) {
+        toast.error("שגיאה ביצירת הפרופיל, נסו שוב");
+        return;
+      }
       if (step < STEPS.length - 1) {
         setStep(step + 1);
       } else {

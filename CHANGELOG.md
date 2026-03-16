@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### תיקון: Onboarding לא מתקדם ללא יצירת ילד + race condition ברפלקציה
+**קבצים:** `client/src/pages/Onboarding.tsx`, `client/src/pages/Reflection.tsx`
+**פירוט:** (1) **Onboarding** — אם יצירת ילד נכשלה בשלב 0, ה-catch block עדיין התקדם לשלב הבא. המשתמש היה מסיים onboarding בלי רשומת ילד, והאפליקציה נשברת כי `ChildSelector` מחזיר null. עכשיו שלב 0 חוסם התקדמות בכשלון ומציג הודעת שגיאה. (2) **Reflection** — אם המשתמש שלח רפלקציה והחליף ילד לפני שה-mutation הסתיים, `onSuccess` הפעיל `setSubmitted(true)` אחרי שה-`useEffect` כבר איפס אותו — מה שהציג "כל הכבוד" לילד הלא נכון. נוסף `submittedForChildRef` שמוודא שה-callback רק מסמן submitted אם ה-childId הפעיל עדיין תואם.
+
 ### תיקון יצירת ילדים כפולים בניווט אחורה ב-Onboarding
 **קבצים:** `client/src/pages/Onboarding.tsx`
 **פירוט:** לחיצה על "הבא" בשלב 0, חזרה ל-0 ולחיצה שנייה על "הבא" יצרה ילד כפול + פעילויות כפולות. נוסף guard `createdChildId` שמונע יצירה חוזרת אם הילד כבר נוצר.
