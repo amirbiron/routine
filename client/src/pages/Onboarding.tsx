@@ -38,6 +38,7 @@ interface OnboardingProps {
 export default function Onboarding({ onComplete }: OnboardingProps) {
   const [step, setStep] = useState(0);
   const [childName, setChildName] = useState("");
+  const [createdChildId, setCreatedChildId] = useState<number | null>(null);
 
   const updateProfile = trpc.profile.update.useMutation();
   const createChild = trpc.children.create.useMutation();
@@ -46,12 +47,13 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
   const handleNext = async () => {
     try {
-      if (step === 0 && childName.trim()) {
+      if (step === 0 && childName.trim() && createdChildId === null) {
         // יצירת רשומת ילד + עדכון childName על המשתמש (תאימות אחורה)
         await updateProfile.mutateAsync({ childName: childName.trim() });
         const result = await createChild.mutateAsync({ name: childName.trim() });
         // seed פעילויות ברירת מחדל לילד
         if (result.id) {
+          setCreatedChildId(result.id);
           await seedActivities.mutateAsync({ childId: result.id });
         }
       }

@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### תיקון יצירת ילדים כפולים בניווט אחורה ב-Onboarding
+**קבצים:** `client/src/pages/Onboarding.tsx`
+**פירוט:** לחיצה על "הבא" בשלב 0, חזרה ל-0 ולחיצה שנייה על "הבא" יצרה ילד כפול + פעילויות כפולות. נוסף guard `createdChildId` שמונע יצירה חוזרת אם הילד כבר נוצר.
+
 ### הסרת קוד מת — updateTokenBalance ו-getChild
 **קבצים:** `server/db.ts`
 **פירוט:** הסרת `updateTokenBalance` — פונקציה שכתבה ל-`users.tokenBalance` שכבר לא נקרא אחרי המעבר לחישוב דינמי מ-tokenEvents. הוסרה גם `getChild` שלא נקראה מאף מקום בקוד. כמו כן הוסרה הקריאה ל-`updateTokenBalance` מתוך `createTokenEvent`.
