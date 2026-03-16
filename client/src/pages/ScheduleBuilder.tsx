@@ -49,6 +49,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PrintSchedule } from "@/components/PrintSchedule";
 import { Celebration } from "@/components/Celebration";
 import { getTodayIsrael, formatDateHebrew } from "@shared/dateUtils";
+import { useActiveChild } from "@/contexts/ChildContext";
 
 const SECTION_ICON_MAP: Record<ScheduleSection, typeof Sunrise> = {
   morning: Sunrise,
@@ -198,8 +199,9 @@ function BankItem({
 export default function ScheduleBuilder() {
   const [date] = useState(getTodayIsrael);
   const utils = trpc.useUtils();
-  const { data: activities = [] } = trpc.activities.list.useQuery();
-  const { data: existingSchedule, isLoading } = trpc.schedule.get.useQuery({ date });
+  const { activeChildId } = useActiveChild();
+  const { data: activities = [] } = trpc.activities.list.useQuery({ childId: activeChildId });
+  const { data: existingSchedule, isLoading } = trpc.schedule.get.useQuery({ date, childId: activeChildId });
   const saveMutation = trpc.schedule.save.useMutation({
     onSuccess: () => {
       utils.schedule.get.invalidate();
@@ -335,7 +337,7 @@ export default function ScheduleBuilder() {
     if (!item) return;
 
     if (existingSchedule) {
-      toggleMutation.mutate({ date, activityId, completed: !item.completed });
+      toggleMutation.mutate({ date, childId: activeChildId, activityId, completed: !item.completed });
     }
 
     setScheduleItems(prev => {
@@ -354,6 +356,7 @@ export default function ScheduleBuilder() {
     const orderedItems = scheduleItems.map((item, idx) => ({ ...item, order: idx }));
     await saveMutation.mutateAsync({
       date,
+      childId: activeChildId,
       items: orderedItems,
       isCompleted: orderedItems.every(i => i.completed),
     });

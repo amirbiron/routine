@@ -6,13 +6,15 @@ import { motion } from "framer-motion";
 import { Star, Trophy, Sparkles } from "lucide-react";
 import { Celebration } from "@/components/Celebration";
 import { getTodayIsrael } from "@shared/dateUtils";
+import { useActiveChild } from "@/contexts/ChildContext";
 
 export default function Tokens() {
   const [date] = useState(getTodayIsrael);
   const utils = trpc.useUtils();
+  const { activeChildId } = useActiveChild();
   const { data: balanceData } = trpc.tokens.balance.useQuery();
-  const { data: history = [] } = trpc.tokens.history.useQuery({ limit: 20 });
-  const { data: schedule } = trpc.schedule.get.useQuery({ date });
+  const { data: history = [] } = trpc.tokens.history.useQuery({ limit: 20, childId: activeChildId });
+  const { data: schedule } = trpc.schedule.get.useQuery({ date, childId: activeChildId });
 
   const [celebrating, setCelebrating] = useState(false);
   const [lastTokensEarned, setLastTokensEarned] = useState(0);
@@ -41,6 +43,7 @@ export default function Tokens() {
       amount: tokensEarned,
       reason,
       date,
+      childId: activeChildId,
     });
     toast.success(`!קיבלת ${tokensEarned} אסימונים`);
   };

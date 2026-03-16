@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { getTodayIsrael } from "@shared/dateUtils";
+import { useActiveChild } from "@/contexts/ChildContext";
 
 const QUESTIONS = [
   { key: "mood", label: "?איך היה היום", type: "mood" },
@@ -18,7 +19,8 @@ const QUESTIONS = [
 
 export default function Reflection() {
   const [date] = useState(getTodayIsrael);
-  const { data: existingReflection, isLoading } = trpc.reflection.get.useQuery({ date });
+  const { activeChildId } = useActiveChild();
+  const { data: existingReflection, isLoading } = trpc.reflection.get.useQuery({ date, childId: activeChildId });
   const saveMutation = trpc.reflection.save.useMutation({
     onSuccess: () => {
       toast.success("הרפלקציה נשמרה! כל הכבוד!");
@@ -49,6 +51,7 @@ export default function Reflection() {
   const handleSubmit = async () => {
     await saveMutation.mutateAsync({
       date,
+      childId: activeChildId,
       mood: (answers.mood as Mood) || undefined,
       enjoyedMost: answers.enjoyedMost || undefined,
       hardest: answers.hardest || undefined,

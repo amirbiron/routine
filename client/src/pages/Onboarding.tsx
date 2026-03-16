@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
+import { useActiveChild } from "@/contexts/ChildContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 
@@ -39,23 +40,30 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [childName, setChildName] = useState("");
 
   const updateProfile = trpc.profile.update.useMutation();
+  const createChild = trpc.children.create.useMutation();
   const seedActivities = trpc.activities.seedDefaults.useMutation();
+  const { refetch } = useActiveChild();
 
   const handleNext = async () => {
     try {
       if (step === 0 && childName.trim()) {
+        // יצירת רשומת ילד + עדכון childName על המשתמש (תאימות אחורה)
         await updateProfile.mutateAsync({ childName: childName.trim() });
+        const result = await createChild.mutateAsync({ name: childName.trim() });
+        // seed פעילויות ברירת מחדל לילד
+        if (result.id) {
+          await seedActivities.mutateAsync({ childId: result.id });
+        }
       }
       if (step < STEPS.length - 1) {
         setStep(step + 1);
       } else {
-        await seedActivities.mutateAsync();
         await updateProfile.mutateAsync({ onboardingDone: true });
+        refetch();
         onComplete();
       }
     } catch (error) {
       console.error("Onboarding error:", error);
-      // Still allow proceeding on error
       if (step < STEPS.length - 1) {
         setStep(step + 1);
       } else {
@@ -164,7 +172,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
               <Button
                 onClick={handleNext}
-                disabled={!canProceed || updateProfile.isPending || seedActivities.isPending}
+                disabled={!canProceed || updateProfile.isPending || createChild.isPending || seedActivities.isPending}
                 className="sketch-btn bg-sketch-coral text-white border-sketch-charcoal font-hand text-lg"
               >
                 {step === STEPS.length - 1 ? "!יאללה, נתחיל" : "הבא"}

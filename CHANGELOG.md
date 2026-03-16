@@ -6,6 +6,18 @@
 
 ---
 
+## [2026-03-16]
+
+### תמיכה בריבוי ילדים לחשבון הורה אחד
+**קבצים:** `drizzle/schema.ts`, `drizzle/0003_add_children_table.sql`, `server/db.ts`, `server/routers.ts`, `client/src/contexts/ChildContext.tsx`, `client/src/components/ChildSelector.tsx`, `client/src/components/AppHeader.tsx`, `client/src/pages/ChildrenManager.tsx`, `client/src/pages/Onboarding.tsx`, `client/src/pages/Home.tsx`, `client/src/pages/ScheduleBuilder.tsx`, `client/src/pages/ActivityBank.tsx`, `client/src/pages/Reflection.tsx`, `client/src/pages/Tokens.tsx`, `client/src/App.tsx`
+**פירוט:** הוספת טבלת `children` חדשה שמאפשרת להורה אחד לנהל כמה ילדים עם מייל הרשמה אחד. כל ילד מקבל מאגר פעילויות, לוח זמנים, רפלקציות ואסימונים נפרדים. שינויים עיקריים:
+- **DB:** טבלת `children` (id, userId, name, avatarColor, sortOrder). עמודת `childId` nullable נוספה ל-`activities`, `schedules`, `reflections`, `tokenEvents`. מיגרציית SQL מעבירה נתונים קיימים.
+- **Server:** ראוטר `children` חדש (list/create/update/delete). כל הראוטרים הקיימים (activities, schedule, reflection, tokens) מקבלים `childId` אופציונלי ומסננים לפיו. פונקציות DB עודכנו בהתאם.
+- **Client:** `ChildContext` + `useActiveChild` hook — שומר את הילד הפעיל ב-localStorage. `ChildSelector` ב-header מאפשר מעבר בין ילדים. דף `ChildrenManager` לניהול ילדים (הוספה/עריכה/מחיקה). Onboarding יוצר רשומת ילד + seed פעילויות. כל הדפים (ScheduleBuilder, ActivityBank, Reflection, Tokens, Home) עודכנו להעביר `childId` לשאילתות.
+- **תאימות אחורה:** `childId` הוא nullable — משתמשים קיימים ממשיכים לעבוד. המיגרציה יוצרת ילד ברירת מחדל למשתמשים קיימים ומקשרת את הנתונים שלהם.
+
+---
+
 ## [2026-03-11]
 
 ### תיקון VAPID subject — הוספת mailto: אוטומטית

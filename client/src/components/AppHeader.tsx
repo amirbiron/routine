@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { getLoginUrl } from "@/const";
 import { Link, useLocation } from "wouter";
 import { LogIn, LogOut, BookOpen, ArrowRight, Bell } from "lucide-react";
+import { ChildSelector } from "./ChildSelector";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "שגרה בחוסר שגרה",
@@ -12,6 +13,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/tokens": "האסימונים שלי",
   "/parents": "מדריך להורים",
   "/reminders": "תזכורות",
+  "/children": "ניהול ילדים",
 };
 
 export function AppHeader() {
@@ -35,6 +37,7 @@ export function AppHeader() {
         </div>
 
         <div className="flex items-center gap-1">
+          {isAuthenticated && <ChildSelector />}
           {isAuthenticated && (
             <>
               <Link href="/reminders">

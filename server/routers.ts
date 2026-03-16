@@ -10,6 +10,9 @@ import { sendPushToUser } from "./pushScheduler";
 const categoryEnum = z.enum(["solo", "social", "movement", "screens"]);
 const sectionEnum = z.enum(["morning", "afternoon", "evening"]);
 
+// childId אופציונלי — תאימות אחורה למשתמשים ללא ילד מוגדר
+const optionalChildId = z.number().optional();
+
 export const appRouter = router({
   system: systemRouter,
 
@@ -34,10 +37,60 @@ export const appRouter = router({
       }),
   }),
 
-  activities: router({
+  // ─── ילדים ─────────────────────────────────────────────────
+  children: router({
     list: protectedProcedure.query(async ({ ctx }) => {
-      return db.getActivities(ctx.user.id);
+      return db.getChildren(ctx.user.id);
     }),
+
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(100),
+        avatarColor: z.string().default("coral"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const existingChildren = await db.getChildren(ctx.user.id);
+        const sortOrder = existingChildren.length;
+        const id = await db.createChild({
+          userId: ctx.user.id,
+          name: input.name,
+          avatarColor: input.avatarColor,
+          sortOrder,
+        });
+        return { id };
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).max(100).optional(),
+        avatarColor: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        await db.updateChild(id, ctx.user.id, data);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        // לפחות ילד אחד חייב להישאר
+        const existing = await db.getChildren(ctx.user.id);
+        if (existing.length <= 1) {
+          throw new Error("לא ניתן למחוק את הילד האחרון");
+        }
+        await db.deleteChild(input.id, ctx.user.id);
+        return { success: true };
+      }),
+  }),
+
+  activities: router({
+    list: protectedProcedure
+      .input(z.object({ childId: optionalChildId }).optional())
+      .query(async ({ ctx, input }) => {
+        return db.getActivities(ctx.user.id, input?.childId);
+      }),
 
     create: protectedProcedure
       .input(z.object({
@@ -46,6 +99,7 @@ export const appRouter = router({
         color: z.string().default("coral"),
         category: categoryEnum.default("solo"),
         sortOrder: z.number().default(0),
+        childId: optionalChildId,
       }))
       .mutation(async ({ ctx, input }) => {
         const id = await db.createActivity({ ...input, userId: ctx.user.id });
@@ -74,50 +128,49 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    seedDefaults: protectedProcedure.mutation(async ({ ctx }) => {
-      const existing = await db.getActivities(ctx.user.id);
-      // Only skip seeding if user has real (non-test) default activities
-      const hasDefaults = existing.some(a => a.isDefault);
-      if (hasDefaults) return { seeded: false };
+    seedDefaults: protectedProcedure
+      .input(z.object({ childId: optionalChildId }).optional())
+      .mutation(async ({ ctx, input }) => {
+        const childId = input?.childId;
+        const existing = await db.getActivities(ctx.user.id, childId);
+        const hasDefaults = existing.some(a => a.isDefault);
+        if (hasDefaults) return { seeded: false };
 
-      const defaults = [
-        // פעילויות שאני עושה עם עצמי
-        { title: "ציור ויצירה", icon: "palette", color: "coral", category: "solo" as const, sortOrder: 1 },
-        { title: "משחק קופסה", icon: "puzzle", color: "sky", category: "solo" as const, sortOrder: 2 },
-        { title: "בנייה וקוביות", icon: "blocks", color: "mint", category: "solo" as const, sortOrder: 3 },
-        { title: "קריאת ספר", icon: "book", color: "lavender", category: "solo" as const, sortOrder: 4 },
-        { title: "האזנה לסיפור", icon: "headphones", color: "peach", category: "solo" as const, sortOrder: 5 },
-        { title: "סידור פינה אישית", icon: "home", color: "sun", category: "solo" as const, sortOrder: 6 },
-        // פעילויות שאני עושה עם המשפחה/חברים
-        { title: "אפייה במטבח", icon: "cookie", color: "peach", category: "social" as const, sortOrder: 7 },
-        { title: "משחק משותף", icon: "gamepad", color: "sky", category: "social" as const, sortOrder: 8 },
-        { title: "יצירה משותפת", icon: "scissors", color: "coral", category: "social" as const, sortOrder: 9 },
-        { title: "בישול ביחד", icon: "utensils", color: "sun", category: "social" as const, sortOrder: 10 },
-        // פעילות בתנועה
-        { title: "ריקוד וקפיצות", icon: "footprints", color: "sun", category: "movement" as const, sortOrder: 11 },
-        { title: "יוגה לילדים", icon: "stretch", color: "mint", category: "movement" as const, sortOrder: 12 },
-        { title: "משחק בחצר", icon: "sun", color: "sky", category: "movement" as const, sortOrder: 13 },
-        // פעילות עם מסכים
-        { title: "צפייה בסרט", icon: "tv", color: "lavender", category: "screens" as const, sortOrder: 14 },
-        { title: "משחק במחשב", icon: "monitor", color: "sky", category: "screens" as const, sortOrder: 15 },
-        { title: "שיחת וידאו", icon: "smartphone", color: "mint", category: "screens" as const, sortOrder: 16 },
-      ];
+        const defaults = [
+          { title: "ציור ויצירה", icon: "palette", color: "coral", category: "solo" as const, sortOrder: 1 },
+          { title: "משחק קופסה", icon: "puzzle", color: "sky", category: "solo" as const, sortOrder: 2 },
+          { title: "בנייה וקוביות", icon: "blocks", color: "mint", category: "solo" as const, sortOrder: 3 },
+          { title: "קריאת ספר", icon: "book", color: "lavender", category: "solo" as const, sortOrder: 4 },
+          { title: "האזנה לסיפור", icon: "headphones", color: "peach", category: "solo" as const, sortOrder: 5 },
+          { title: "סידור פינה אישית", icon: "home", color: "sun", category: "solo" as const, sortOrder: 6 },
+          { title: "אפייה במטבח", icon: "cookie", color: "peach", category: "social" as const, sortOrder: 7 },
+          { title: "משחק משותף", icon: "gamepad", color: "sky", category: "social" as const, sortOrder: 8 },
+          { title: "יצירה משותפת", icon: "scissors", color: "coral", category: "social" as const, sortOrder: 9 },
+          { title: "בישול ביחד", icon: "utensils", color: "sun", category: "social" as const, sortOrder: 10 },
+          { title: "ריקוד וקפיצות", icon: "footprints", color: "sun", category: "movement" as const, sortOrder: 11 },
+          { title: "יוגה לילדים", icon: "stretch", color: "mint", category: "movement" as const, sortOrder: 12 },
+          { title: "משחק בחצר", icon: "sun", color: "sky", category: "movement" as const, sortOrder: 13 },
+          { title: "צפייה בסרט", icon: "tv", color: "lavender", category: "screens" as const, sortOrder: 14 },
+          { title: "משחק במחשב", icon: "monitor", color: "sky", category: "screens" as const, sortOrder: 15 },
+          { title: "שיחת וידאו", icon: "smartphone", color: "mint", category: "screens" as const, sortOrder: 16 },
+        ];
 
-      await db.bulkCreateActivities(defaults.map(d => ({ ...d, userId: ctx.user.id, isDefault: true })));
-      return { seeded: true };
-    }),
+        await db.bulkCreateActivities(defaults.map(d => ({ ...d, userId: ctx.user.id, childId, isDefault: true })));
+        return { seeded: true };
+      }),
   }),
 
   schedule: router({
     get: protectedProcedure
-      .input(z.object({ date: z.string() }))
+      .input(z.object({ date: z.string(), childId: optionalChildId }))
       .query(async ({ ctx, input }) => {
-        return db.getSchedule(ctx.user.id, input.date);
+        return db.getSchedule(ctx.user.id, input.date, input.childId);
       }),
 
     save: protectedProcedure
       .input(z.object({
         date: z.string(),
+        childId: optionalChildId,
         items: z.array(z.object({
           activityId: z.number(),
           title: z.string(),
@@ -132,6 +185,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const id = await db.upsertSchedule({
           userId: ctx.user.id,
+          childId: input.childId,
           date: input.date,
           items: input.items,
           isCompleted: input.isCompleted,
@@ -142,11 +196,12 @@ export const appRouter = router({
     toggleItem: protectedProcedure
       .input(z.object({
         date: z.string(),
+        childId: optionalChildId,
         activityId: z.number(),
         completed: z.boolean(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const schedule = await db.getSchedule(ctx.user.id, input.date);
+        const schedule = await db.getSchedule(ctx.user.id, input.date, input.childId);
         if (!schedule) return { success: false };
         const items = (schedule.items as any[]).map((item: any) =>
           item.activityId === input.activityId ? { ...item, completed: input.completed } : item
@@ -154,6 +209,7 @@ export const appRouter = router({
         const allCompleted = items.every((item: any) => item.completed);
         await db.upsertSchedule({
           userId: ctx.user.id,
+          childId: input.childId,
           date: input.date,
           items,
           isCompleted: allCompleted,
@@ -164,14 +220,15 @@ export const appRouter = router({
 
   reflection: router({
     get: protectedProcedure
-      .input(z.object({ date: z.string() }))
+      .input(z.object({ date: z.string(), childId: optionalChildId }))
       .query(async ({ ctx, input }) => {
-        return db.getReflection(ctx.user.id, input.date);
+        return db.getReflection(ctx.user.id, input.date, input.childId);
       }),
 
     save: protectedProcedure
       .input(z.object({
         date: z.string(),
+        childId: optionalChildId,
         enjoyedMost: z.string().optional(),
         hardest: z.string().optional(),
         whatHelped: z.string().optional(),
@@ -181,6 +238,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const id = await db.createReflection({
           userId: ctx.user.id,
+          childId: input.childId,
           date: input.date,
           enjoyedMost: input.enjoyedMost,
           hardest: input.hardest,
@@ -192,9 +250,9 @@ export const appRouter = router({
       }),
 
     recent: protectedProcedure
-      .input(z.object({ limit: z.number().default(7) }))
+      .input(z.object({ limit: z.number().default(7), childId: optionalChildId }))
       .query(async ({ ctx, input }) => {
-        return db.getRecentReflections(ctx.user.id, input.limit);
+        return db.getRecentReflections(ctx.user.id, input.limit, input.childId);
       }),
   }),
 
@@ -208,10 +266,12 @@ export const appRouter = router({
         amount: z.number().min(1).max(10),
         reason: z.string().min(1).max(200),
         date: z.string(),
+        childId: optionalChildId,
       }))
       .mutation(async ({ ctx, input }) => {
         await db.createTokenEvent({
           userId: ctx.user.id,
+          childId: input.childId,
           amount: input.amount,
           reason: input.reason,
           date: input.date,
@@ -220,19 +280,17 @@ export const appRouter = router({
       }),
 
     history: protectedProcedure
-      .input(z.object({ limit: z.number().default(20) }))
+      .input(z.object({ limit: z.number().default(20), childId: optionalChildId }))
       .query(async ({ ctx, input }) => {
-        return db.getTokenEvents(ctx.user.id, input.limit);
+        return db.getTokenEvents(ctx.user.id, input.limit, input.childId);
       }),
   }),
 
   push: router({
-    // מחזיר את ה-VAPID public key לקליינט
     vapidPublicKey: publicProcedure.query(() => {
       return { key: ENV.vapidPublicKey };
     }),
 
-    // שמירת push subscription
     subscribe: protectedProcedure
       .input(z.object({
         endpoint: z.string().url(),
@@ -246,7 +304,6 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    // ביטול subscription
     unsubscribe: protectedProcedure
       .input(z.object({ endpoint: z.string() }))
       .mutation(async ({ ctx, input }) => {
@@ -254,7 +311,6 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    // שליחת push בדיקה
     test: protectedProcedure.mutation(async ({ ctx }) => {
       const results = await sendPushToUser(ctx.user.id, {
         title: "בדיקה ✅",
@@ -267,7 +323,6 @@ export const appRouter = router({
   }),
 
   reminders: router({
-    // קבלת הגדרות תזכורות
     get: protectedProcedure.query(async ({ ctx }) => {
       const settings = await db.getReminderSettings(ctx.user.id);
       return settings ?? {
@@ -279,7 +334,6 @@ export const appRouter = router({
       };
     }),
 
-    // עדכון הגדרות תזכורות
     update: protectedProcedure
       .input(z.object({
         morningEnabled: z.boolean().optional(),

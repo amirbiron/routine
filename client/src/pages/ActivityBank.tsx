@@ -8,13 +8,15 @@ import { CATEGORY_LABELS, COLOR_MAP, ICON_OPTIONS, type ActivityCategory } from 
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { useActiveChild } from "@/contexts/ChildContext";
 
 const CATEGORIES: ActivityCategory[] = ["solo", "social", "movement", "screens"];
 const COLORS = Object.keys(COLOR_MAP);
 
 export default function ActivityBank() {
   const utils = trpc.useUtils();
-  const { data: activities = [], isLoading } = trpc.activities.list.useQuery();
+  const { activeChildId } = useActiveChild();
+  const { data: activities = [], isLoading } = trpc.activities.list.useQuery({ childId: activeChildId });
   const seedMutation = trpc.activities.seedDefaults.useMutation({
     onSuccess: (result) => {
       if (result.seeded) utils.activities.list.invalidate();
@@ -35,7 +37,7 @@ export default function ActivityBank() {
   if (!isLoading && !seedAttempted && activities.length === 0) {
     setSeedAttempted(true);
     try {
-      seedMutation.mutate();
+      seedMutation.mutate({ childId: activeChildId });
     } catch (e) {
       console.error("Failed to seed defaults:", e);
     }
@@ -62,7 +64,7 @@ export default function ActivityBank() {
     if (editingId) {
       await updateMutation.mutateAsync({ id: editingId, ...form });
     } else {
-      await createMutation.mutateAsync(form);
+      await createMutation.mutateAsync({ ...form, childId: activeChildId });
     }
     setDialogOpen(false);
   };

@@ -2,6 +2,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
+  children, InsertChild,
   activities, InsertActivity, Activity,
   schedules, InsertSchedule,
   reflections, InsertReflection,
@@ -104,11 +105,51 @@ export async function updateTokenBalance(userId: number, amount: number) {
   }
 }
 
-// ─── Activities ──────────────────────────────────────────────
-export async function getActivities(userId: number) {
+// ─── Children ────────────────────────────────────────────────
+export async function getChildren(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(activities).where(eq(activities.userId, userId)).orderBy(activities.sortOrder);
+  return db.select().from(children).where(eq(children.userId, userId)).orderBy(children.sortOrder);
+}
+
+export async function getChild(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(children).where(and(eq(children.id, id), eq(children.userId, userId))).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function createChild(data: InsertChild) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(children).values(data);
+  return result[0].insertId;
+}
+
+export async function updateChild(id: number, userId: number, data: Partial<Pick<InsertChild, "name" | "avatarColor" | "sortOrder">>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(children).set(data).where(and(eq(children.id, id), eq(children.userId, userId)));
+}
+
+export async function deleteChild(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  // מחיקת כל הנתונים של הילד
+  await db.delete(activities).where(and(eq(activities.userId, userId), eq(activities.childId, id)));
+  await db.delete(schedules).where(and(eq(schedules.userId, userId), eq(schedules.childId, id)));
+  await db.delete(reflections).where(and(eq(reflections.userId, userId), eq(reflections.childId, id)));
+  await db.delete(tokenEvents).where(and(eq(tokenEvents.userId, userId), eq(tokenEvents.childId, id)));
+  await db.delete(children).where(and(eq(children.id, id), eq(children.userId, userId)));
+}
+
+// ─── Activities ──────────────────────────────────────────────
+export async function getActivities(userId: number, childId?: number | null) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(activities.userId, userId)];
+  if (childId != null) conditions.push(eq(activities.childId, childId));
+  return db.select().from(activities).where(and(...conditions)).orderBy(activities.sortOrder);
 }
 
 export async function createActivity(data: InsertActivity) {
@@ -138,17 +179,19 @@ export async function bulkCreateActivities(items: InsertActivity[]) {
 }
 
 // ─── Schedules ───────────────────────────────────────────────
-export async function getSchedule(userId: number, date: string) {
+export async function getSchedule(userId: number, date: string, childId?: number | null) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(schedules).where(and(eq(schedules.userId, userId), eq(schedules.date, date))).limit(1);
+  const conditions = [eq(schedules.userId, userId), eq(schedules.date, date)];
+  if (childId != null) conditions.push(eq(schedules.childId, childId));
+  const result = await db.select().from(schedules).where(and(...conditions)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
 
 export async function upsertSchedule(data: InsertSchedule) {
   const db = await getDb();
   if (!db) return null;
-  const existing = await getSchedule(data.userId, data.date);
+  const existing = await getSchedule(data.userId, data.date, data.childId);
   if (existing) {
     await db.update(schedules).set({ items: data.items, isCompleted: data.isCompleted }).where(eq(schedules.id, existing.id));
     return existing.id;
@@ -159,10 +202,12 @@ export async function upsertSchedule(data: InsertSchedule) {
 }
 
 // ─── Reflections ─────────────────────────────────────────────
-export async function getReflection(userId: number, date: string) {
+export async function getReflection(userId: number, date: string, childId?: number | null) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(reflections).where(and(eq(reflections.userId, userId), eq(reflections.date, date))).limit(1);
+  const conditions = [eq(reflections.userId, userId), eq(reflections.date, date)];
+  if (childId != null) conditions.push(eq(reflections.childId, childId));
+  const result = await db.select().from(reflections).where(and(...conditions)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
 
@@ -173,10 +218,12 @@ export async function createReflection(data: InsertReflection) {
   return result[0].insertId;
 }
 
-export async function getRecentReflections(userId: number, limit: number = 7) {
+export async function getRecentReflections(userId: number, limit: number = 7, childId?: number | null) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(reflections).where(eq(reflections.userId, userId)).orderBy(desc(reflections.date)).limit(limit);
+  const conditions = [eq(reflections.userId, userId)];
+  if (childId != null) conditions.push(eq(reflections.childId, childId));
+  return db.select().from(reflections).where(and(...conditions)).orderBy(desc(reflections.date)).limit(limit);
 }
 
 // ─── Token Events ────────────────────────────────────────────
@@ -188,10 +235,12 @@ export async function createTokenEvent(data: InsertTokenEvent) {
   return result[0].insertId;
 }
 
-export async function getTokenEvents(userId: number, limit: number = 20) {
+export async function getTokenEvents(userId: number, limit: number = 20, childId?: number | null) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(tokenEvents).where(eq(tokenEvents.userId, userId)).orderBy(desc(tokenEvents.createdAt)).limit(limit);
+  const conditions = [eq(tokenEvents.userId, userId)];
+  if (childId != null) conditions.push(eq(tokenEvents.childId, childId));
+  return db.select().from(tokenEvents).where(and(...conditions)).orderBy(desc(tokenEvents.createdAt)).limit(limit);
 }
 
 // ─── Push Subscriptions ─────────────────────────────────────
