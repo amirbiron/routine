@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### תיקון: אנימציית חגיגה מופעלת גם כשהענקת אסימונים נדחית
+**קבצים:** `client/src/pages/Tokens.tsx`
+**פירוט:** ה-callback `onSuccess` של mutation הענקת אסימונים הפעיל `setCelebrating(true)` ללא תנאי, גם כשהשרת החזיר `alreadyAwarded: true`. המשתמש ראה חגיגה + הודעת שגיאה בו-זמנית. הועבר הלוגיקה (celebration + invalidation + toast) מ-`onSuccess` לתוך `handleAward` — רק אחרי בדיקת `alreadyAwarded`.
+
 ### תיקוני באגים: סנכרון לוח זמנים, seed ב-onboarding, הענקת אסימונים כפולה
 **קבצים:** `client/src/pages/ScheduleBuilder.tsx`, `client/src/pages/Onboarding.tsx`, `server/db.ts`, `server/routers.ts`, `client/src/pages/Tokens.tsx`
 **פירוט:** (1) **ScheduleBuilder** — ה-effect לאתחול scheduleItems השתמש ב-`existingSchedule.id` כ-key, שלא משתנה כשפריטים מתעדכנים (toggleItem). הוחלף ל-`updatedAt` שמשתנה בכל upsert. (2) **Onboarding** — אם seedActivities נכשל אחרי שהילד כבר נוצר, ה-catch block חסם התקדמות ו-seed לא נוסה שנית (כי createdChildId כבר מלא). עכשיו seed עטוף ב-try/catch נפרד — כישלון seed לא חוסם, ו-ActivityBank ינסה שוב אוטומטית. (3) **Tokens** — לא הייתה מניעה של הענקה כפולה לאותו ילד+יום. נוספה פונקציה `hasTokenEventForDate` שמונעת יצירת אירוע כפול בצד השרת, ומציגה הודעה מתאימה בקליינט.

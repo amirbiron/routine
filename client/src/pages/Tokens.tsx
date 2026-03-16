@@ -19,13 +19,7 @@ export default function Tokens() {
   const [celebrating, setCelebrating] = useState(false);
   const [lastTokensEarned, setLastTokensEarned] = useState(0);
 
-  const awardMutation = trpc.tokens.award.useMutation({
-    onSuccess: () => {
-      utils.tokens.balance.invalidate();
-      utils.tokens.history.invalidate();
-      setCelebrating(true);
-    },
-  });
+  const awardMutation = trpc.tokens.award.useMutation();
 
   const scheduleItems = (schedule?.items as any[]) || [];
   const completedCount = scheduleItems.filter((i: any) => i.completed).length;
@@ -49,6 +43,9 @@ export default function Tokens() {
       toast.error("כבר קיבלת אסימונים היום!");
       return;
     }
+    utils.tokens.balance.invalidate();
+    utils.tokens.history.invalidate();
+    setCelebrating(true);
     toast.success(`!קיבלת ${tokensEarned} אסימונים`);
   };
 
