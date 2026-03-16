@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
 import { ENV } from "./_core/env";
@@ -12,6 +13,15 @@ const sectionEnum = z.enum(["morning", "afternoon", "evening"]);
 
 // childId אופציונלי — תאימות אחורה למשתמשים ללא ילד מוגדר
 const optionalChildId = z.number().optional();
+
+// בדיקת בעלות — וידוא שה-childId שייך למשתמש המחובר
+async function assertChildOwnership(childId: number | undefined, userId: number) {
+  if (childId == null) return;
+  const owns = await db.verifyChildOwnership(childId, userId);
+  if (!owns) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "הילד לא שייך למשתמש" });
+  }
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -102,6 +112,7 @@ export const appRouter = router({
         childId: optionalChildId,
       }))
       .mutation(async ({ ctx, input }) => {
+        await assertChildOwnership(input.childId, ctx.user.id);
         const id = await db.createActivity({ ...input, userId: ctx.user.id });
         return { id };
       }),
@@ -132,6 +143,7 @@ export const appRouter = router({
       .input(z.object({ childId: optionalChildId }).optional())
       .mutation(async ({ ctx, input }) => {
         const childId = input?.childId;
+        await assertChildOwnership(childId, ctx.user.id);
         const existing = await db.getActivities(ctx.user.id, childId);
         const hasDefaults = existing.some(a => a.isDefault);
         if (hasDefaults) return { seeded: false };
@@ -183,6 +195,7 @@ export const appRouter = router({
         isCompleted: z.boolean().default(false),
       }))
       .mutation(async ({ ctx, input }) => {
+        await assertChildOwnership(input.childId, ctx.user.id);
         const id = await db.upsertSchedule({
           userId: ctx.user.id,
           childId: input.childId,
@@ -201,6 +214,7 @@ export const appRouter = router({
         completed: z.boolean(),
       }))
       .mutation(async ({ ctx, input }) => {
+        await assertChildOwnership(input.childId, ctx.user.id);
         const schedule = await db.getSchedule(ctx.user.id, input.date, input.childId);
         if (!schedule) return { success: false };
         const items = (schedule.items as any[]).map((item: any) =>
@@ -236,6 +250,7 @@ export const appRouter = router({
         mood: z.enum(["great", "good", "okay", "hard", "tough"]).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        await assertChildOwnership(input.childId, ctx.user.id);
         const id = await db.createReflection({
           userId: ctx.user.id,
           childId: input.childId,
@@ -272,6 +287,7 @@ export const appRouter = router({
         childId: optionalChildId,
       }))
       .mutation(async ({ ctx, input }) => {
+        await assertChildOwnership(input.childId, ctx.user.id);
         // מניעת הענקה כפולה לאותו ילד באותו יום
         const alreadyAwarded = await db.hasTokenEventForDate(ctx.user.id, input.date, input.childId);
         if (alreadyAwarded) {

@@ -102,6 +102,14 @@ export async function getChildren(userId: number) {
   return db.select().from(children).where(eq(children.userId, userId)).orderBy(children.sortOrder);
 }
 
+export async function verifyChildOwnership(childId: number, userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const rows = await db.select({ id: children.id }).from(children)
+    .where(and(eq(children.id, childId), eq(children.userId, userId)));
+  return rows.length > 0;
+}
+
 export async function createChild(data: InsertChild) {
   const db = await getDb();
   if (!db) return null;

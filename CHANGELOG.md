@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### אבטחה: בדיקת בעלות על childId במוטציות בצד השרת
+**קבצים:** `server/db.ts`, `server/routers.ts`
+**פירוט:** כל המוטציות שמקבלות `childId` מהלקוח (activities.create, activities.seedDefaults, schedule.save, schedule.toggleItem, reflection.save, tokens.award) לא אימתו שה-childId שייך למשתמש המחובר. נוספה פונקציית `verifyChildOwnership` ב-db.ts ו-`assertChildOwnership` ב-routers.ts שזורקת TRPCError FORBIDDEN אם הילד לא שייך למשתמש. הבדיקה מופעלת בתחילת כל מוטציה — רק אם childId מסופק (undefined עובר בלי בדיקה לתאימות אחורה).
+
 ### תיקון: רפלקציה לא מתעדכנת ב-cache אחרי שמירה
 **קבצים:** `client/src/pages/Reflection.tsx`
 **פירוט:** ה-`onSuccess` של `reflection.save` לא ביצע `invalidate()` על `reflection.get` ו-`reflection.recent`. כשמשתמש שמר רפלקציה לילד א', עבר לילד ב' וחזר — הקאש הישן הציג טופס ריק במקום תצוגת ההצלחה. נוספו `utils.reflection.get.invalidate()` ו-`utils.reflection.recent.invalidate()`.
