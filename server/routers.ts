@@ -53,12 +53,10 @@ export const appRouter = router({
       const existing = await db.getChildren(ctx.user.id);
       if (existing.length > 0) return existing;
 
-      // backfill — משתמשים ישנים עם childName בטבלת users אבל בלי רשומה בטבלת children
+      // backfill אטומי — משתמשים ישנים עם childName בטבלת users אבל בלי רשומה בטבלת children
       const childName = (ctx.user as any).childName;
       if (childName) {
-        const newChildId = await db.createChild({ userId: ctx.user.id, name: childName, avatarColor: "coral", sortOrder: 0 });
-        // שיוך פעילויות/לוחות זמנים ישנים (childId=NULL) לילד החדש
-        if (newChildId) await db.linkOrphanDataToChild(ctx.user.id, newChildId);
+        await db.backfillChild(ctx.user.id, childName);
         return db.getChildren(ctx.user.id);
       }
 

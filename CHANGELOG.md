@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### תיקון: race condition ו-backfill לא-אטומי ביצירת ילד אוטומטית
+**קבצים:** `drizzle/schema.ts`, `server/db.ts`, `server/routers.ts`
+**פירוט:** תוקנו שני באגים ב-backfill של טבלת children: (1) Race condition — כשכמה בקשות מגיעות במקביל (retry של react-query, כמה טאבים), כולן רואות 0 ילדים ויוצרות כפילויות. הפתרון: אינדקס ייחודי על `(userId, name)` בטבלת children + שימוש ב-`INSERT IGNORE` שמתעלם מכפילויות. (2) Non-atomic backfill — `createChild` ו-`linkOrphanDataToChild` רצו בנפרד, כך שאם הקישור נכשל הנתונים היתומים נתקעים לצמיתות. הפתרון: פונקציה חדשה `backfillChild` שעוטפת הכל בטרנזקציה אחת.
+
 ### תיקון: ChildSelector לא מוצג למשתמשים ישנים — backfill אוטומטי של טבלת children
 **קבצים:** `server/routers.ts`, `server/db.ts`
 **פירוט:** משתמשים שנרשמו לפני הוספת פיצ'ר ריבוי ילדים היו עם `childName` בטבלת `users` אבל בלי רשומה בטבלת `children`. כתוצאה, `children.list` החזיר מערך ריק ו-ChildSelector לא הוצג כלל. הפתרון: backfill אוטומטי ב-`children.list` — אם אין ילדים אבל יש `childName`, נוצרת רשומת ילד אוטומטית. בנוסף, כל הנתונים הקיימים (פעילויות, לוחות זמנים, רפלקציות, אסימונים) עם `childId=NULL` משויכים לילד החדש דרך פונקציית `linkOrphanDataToChild`.

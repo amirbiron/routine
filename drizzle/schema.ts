@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, uniqueIndex } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -27,7 +27,9 @@ export const children = mysqlTable("children", {
   avatarColor: varchar("avatarColor", { length: 20 }).default("coral").notNull(),
   sortOrder: int("sortOrder").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => [
+  uniqueIndex("userId_name_idx").on(table.userId, table.name),
+]);
 
 export type Child = typeof children.$inferSelect;
 export type InsertChild = typeof children.$inferInsert;
