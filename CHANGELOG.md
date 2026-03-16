@@ -8,6 +8,12 @@
 
 ## [2026-03-16]
 
+### תיקון: Onboarding לא מגדיר ילד פעיל אחרי יצירה + upsert רפלקציה עלול לדרוס ילד אחר
+**קבצים:** `client/src/pages/Onboarding.tsx`, `server/db.ts`
+**פירוט:** שני תיקונים:
+1. ב-Onboarding, אחרי יצירת ילד חדש לא נקרא `setActiveChildId` — כל השאילתות הראשונות רצו עם `childId: undefined`. נוסף `setActiveChildId(result.id)` מיד אחרי יצירה, ו-`refetch()` הפך ל-`await refetch()` כדי שה-context יתעדכן לפני `onComplete()`.
+2. ב-`upsertReflection`, כש-`childId` הוא `undefined` השאילתה לא סיננה לפי childId — וזה יכול לדרוס רפלקציה של ילד אחר באותו תאריך. נוסף תנאי `isNull(reflections.childId)` כשאין childId, כך שההתאמה תמיד מדויקת.
+
 ### תיקון: כשל ב-seed חוסם סגירת דיאלוג והפעלת ילד חדש
 **קבצים:** `client/src/pages/ChildrenManager.tsx`
 **פירוט:** ב-`handleSave`, קריאת `seedMutation.mutateAsync` לא הייתה עטופה ב-try-catch. אם ה-seed נכשל, `setActiveChildId` ו-`setDialogOpen(false)` לא הגיעו לביצוע — הדיאלוג נשאר פתוח והילד החדש לא הוגדר כפעיל. עטפנו ב-try-catch בהתאמה לדפוס הקיים ב-Onboarding, כי ActivityBank מנסה seed אוטומטית.

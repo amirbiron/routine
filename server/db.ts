@@ -1,4 +1,4 @@
-import { eq, and, desc, sum } from "drizzle-orm";
+import { eq, and, desc, sum, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
@@ -207,7 +207,12 @@ export async function upsertReflection(data: InsertReflection) {
   if (!db) return null;
   // בדיקה אם כבר קיימת רפלקציה לאותו user+date+child — עדכון במקום יצירה כפולה
   const conditions = [eq(reflections.userId, data.userId!), eq(reflections.date, data.date)];
-  if (data.childId != null) conditions.push(eq(reflections.childId, data.childId));
+  // התאמה מדויקת: childId ספציפי או IS NULL — מניעת דריסה בין ילדים שונים
+  if (data.childId != null) {
+    conditions.push(eq(reflections.childId, data.childId));
+  } else {
+    conditions.push(isNull(reflections.childId));
+  }
   const existing = await db.select({ id: reflections.id }).from(reflections).where(and(...conditions)).limit(1);
   if (existing.length > 0) {
     const { userId, date, childId, ...updateFields } = data;

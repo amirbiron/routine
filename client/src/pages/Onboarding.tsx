@@ -44,7 +44,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const updateProfile = trpc.profile.update.useMutation();
   const createChild = trpc.children.create.useMutation();
   const seedActivities = trpc.activities.seedDefaults.useMutation();
-  const { refetch } = useActiveChild();
+  const { refetch, setActiveChildId } = useActiveChild();
 
   const handleNext = async () => {
     try {
@@ -54,6 +54,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         const result = await createChild.mutateAsync({ name: childName.trim() });
         if (result.id) {
           setCreatedChildId(result.id);
+          setActiveChildId(result.id);
           // seed לא קריטי — ActivityBank ינסה שוב אוטומטית
           try {
             await seedActivities.mutateAsync({ childId: result.id });
@@ -66,7 +67,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         setStep(step + 1);
       } else {
         await updateProfile.mutateAsync({ onboardingDone: true });
-        refetch();
+        await refetch();
         onComplete();
       }
     } catch (error) {
