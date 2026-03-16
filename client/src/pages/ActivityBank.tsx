@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,9 +32,18 @@ export default function ActivityBank() {
     onSuccess: () => { utils.activities.list.invalidate(); toast.success("הפעילות נמחקה"); },
   });
 
-  // Auto-seed defaults if user has no default activities
+  // איפוס seedAttempted בעת החלפת ילד
   const [seedAttempted, setSeedAttempted] = useState(false);
-  if (!isLoading && !seedAttempted && activities.length === 0) {
+  const prevChildIdRef = useRef(activeChildId);
+  useEffect(() => {
+    if (prevChildIdRef.current !== activeChildId) {
+      prevChildIdRef.current = activeChildId;
+      setSeedAttempted(false);
+    }
+  }, [activeChildId]);
+
+  // Auto-seed defaults — רק אם activeChildId כבר נטען
+  if (!isLoading && !seedAttempted && activities.length === 0 && activeChildId != null) {
     setSeedAttempted(true);
     try {
       seedMutation.mutate({ childId: activeChildId });

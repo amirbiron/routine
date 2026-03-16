@@ -8,6 +8,14 @@
 
 ## [2026-03-16]
 
+### תיקון באגים בהחלפת ילד פעיל
+**קבצים:** `client/src/pages/ScheduleBuilder.tsx`, `client/src/pages/Reflection.tsx`, `client/src/pages/ActivityBank.tsx`
+**פירוט:** תיקון 4 באגים שהתגלו בפיצ'ר ריבוי הילדים:
+1. **ScheduleBuilder** — `toggleActivity` callback לכד `activeChildId` ישן בגלל שחסר ב-dependency array. נוסף ל-deps.
+2. **ScheduleBuilder** — ה-state המקומי (`scheduleItems`) לא התאפס בעת החלפת ילד — הלוח הזמנים הישן נשאר. הוחלף מ-flag `initialized` ל-`useEffect` שמגיב ל-`scheduleKey` ו-`activeChildId`.
+3. **Reflection** — `submitted` state לא התאפס בעת מעבר ילד, מה שהציג "כל הכבוד" גם לילד שלא מילא רפלקציה. נוסף `useEffect` שמאפס state.
+4. **ActivityBank** — auto-seed רץ עם `childId: undefined` כש-context עוד לא נטען, ויצר פעילויות יתומות. נוסף guard `activeChildId != null` ואיפוס `seedAttempted` בהחלפת ילד.
+
 ### תמיכה בריבוי ילדים לחשבון הורה אחד
 **קבצים:** `drizzle/schema.ts`, `drizzle/0003_add_children_table.sql`, `server/db.ts`, `server/routers.ts`, `client/src/contexts/ChildContext.tsx`, `client/src/components/ChildSelector.tsx`, `client/src/components/AppHeader.tsx`, `client/src/pages/ChildrenManager.tsx`, `client/src/pages/Onboarding.tsx`, `client/src/pages/Home.tsx`, `client/src/pages/ScheduleBuilder.tsx`, `client/src/pages/ActivityBank.tsx`, `client/src/pages/Reflection.tsx`, `client/src/pages/Tokens.tsx`, `client/src/App.tsx`
 **פירוט:** הוספת טבלת `children` חדשה שמאפשרת להורה אחד לנהל כמה ילדים עם מייל הרשמה אחד. כל ילד מקבל מאגר פעילויות, לוח זמנים, רפלקציות ואסימונים נפרדים. שינויים עיקריים:

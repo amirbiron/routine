@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +37,17 @@ export default function Reflection() {
     whatHelped: "",
     tomorrowWish: "",
   });
+
+  // איפוס state בעת החלפת ילד פעיל
+  const prevChildIdRef = useRef(activeChildId);
+  useEffect(() => {
+    if (prevChildIdRef.current !== activeChildId) {
+      prevChildIdRef.current = activeChildId;
+      setSubmitted(false);
+      setStep(0);
+      setAnswers({ mood: "", enjoyedMost: "", hardest: "", whatHelped: "", tomorrowWish: "" });
+    }
+  }, [activeChildId]);
 
   const currentQ = QUESTIONS[step];
   const isLastStep = step === QUESTIONS.length - 1;

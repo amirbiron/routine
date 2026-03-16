@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { ActivityIcon } from "@/components/ActivityIcon";
@@ -218,14 +218,24 @@ export default function ScheduleBuilder() {
   });
 
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
-  const [initialized, setInitialized] = useState(false);
   const [bankOpen, setBankOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [addToSection, setAddToSection] = useState<ScheduleSection | null>(null);
   const [celebrating, setCelebrating] = useState(false);
 
-  // Initialize from existing schedule
-  if (!initialized && !isLoading) {
+  // איפוס state בעת החלפת ילד פעיל
+  const prevChildIdRef = useRef(activeChildId);
+  useEffect(() => {
+    if (prevChildIdRef.current !== activeChildId) {
+      prevChildIdRef.current = activeChildId;
+      setScheduleItems([]);
+    }
+  }, [activeChildId]);
+
+  // אתחול מלוח זמנים קיים — רץ מחדש כשהנתונים מתעדכנים (כולל לאחר החלפת ילד)
+  const scheduleKey = existingSchedule?.id ?? null;
+  useEffect(() => {
+    if (isLoading) return;
     if (existingSchedule?.items) {
       const items = existingSchedule.items as ScheduleItem[];
       const migratedItems = items.map((item, idx) => ({
@@ -234,9 +244,10 @@ export default function ScheduleBuilder() {
         order: item.order ?? idx,
       }));
       setScheduleItems(migratedItems);
+    } else {
+      setScheduleItems([]);
     }
-    setInitialized(true);
-  }
+  }, [scheduleKey, isLoading]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -350,7 +361,7 @@ export default function ScheduleBuilder() {
       }
       return updated;
     });
-  }, [scheduleItems, existingSchedule, date, toggleMutation]);
+  }, [scheduleItems, existingSchedule, date, activeChildId, toggleMutation]);
 
   const handleSave = async () => {
     const orderedItems = scheduleItems.map((item, idx) => ({ ...item, order: idx }));
