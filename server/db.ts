@@ -95,28 +95,11 @@ export async function updateUserProfile(userId: number, data: { childName?: stri
   await db.update(users).set(data).where(eq(users.id, userId));
 }
 
-export async function updateTokenBalance(userId: number, amount: number) {
-  const db = await getDb();
-  if (!db) return;
-  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-  if (user.length > 0) {
-    const newBalance = Math.max(0, (user[0].tokenBalance || 0) + amount);
-    await db.update(users).set({ tokenBalance: newBalance }).where(eq(users.id, userId));
-  }
-}
-
 // ─── Children ────────────────────────────────────────────────
 export async function getChildren(userId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(children).where(eq(children.userId, userId)).orderBy(children.sortOrder);
-}
-
-export async function getChild(id: number, userId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(children).where(and(eq(children.id, id), eq(children.userId, userId))).limit(1);
-  return result.length > 0 ? result[0] : null;
 }
 
 export async function createChild(data: InsertChild) {
@@ -242,7 +225,6 @@ export async function createTokenEvent(data: InsertTokenEvent) {
   const db = await getDb();
   if (!db) return null;
   const result = await db.insert(tokenEvents).values(data);
-  await updateTokenBalance(data.userId, data.amount);
   return result[0].insertId;
 }
 

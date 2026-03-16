@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### הסרת קוד מת — updateTokenBalance ו-getChild
+**קבצים:** `server/db.ts`
+**פירוט:** הסרת `updateTokenBalance` — פונקציה שכתבה ל-`users.tokenBalance` שכבר לא נקרא אחרי המעבר לחישוב דינמי מ-tokenEvents. הוסרה גם `getChild` שלא נקראה מאף מקום בקוד. כמו כן הוסרה הקריאה ל-`updateTokenBalance` מתוך `createTokenEvent`.
+
 ### תיקון יתרת אסימונים — חישוב per-child במקום גלובלי
 **קבצים:** `server/db.ts`, `server/routers.ts`, `client/src/pages/Tokens.tsx`, `server/routers.test.ts`
 **פירוט:** יתרת האסימונים הייתה מאוחסנת כערך גלובלי בטבלת `users.tokenBalance`, כך שכל הילדים ראו את אותה יתרה למרות שהיסטוריית האירועים הייתה נפרדת. הוחלף לחישוב דינמי מ-`SUM(tokenEvents.amount)` עם סינון per-child. פונקציה חדשה `getTokenBalance(userId, childId?)` ב-db.ts, הראוטר `tokens.balance` מקבל `childId` אופציונלי, והקליינט מעביר `activeChildId`.
