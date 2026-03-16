@@ -20,11 +20,14 @@ const QUESTIONS = [
 export default function Reflection() {
   const [date] = useState(getTodayIsrael);
   const { activeChildId } = useActiveChild();
+  const utils = trpc.useUtils();
   const { data: existingReflection, isLoading } = trpc.reflection.get.useQuery({ date, childId: activeChildId });
   // שמירת ה-childId שעבורו נשלחה המוטציה — רק אם עדיין פעיל, מסמנים submitted
   const submittedForChildRef = useRef<number | undefined>(undefined);
   const saveMutation = trpc.reflection.save.useMutation({
     onSuccess: () => {
+      utils.reflection.get.invalidate();
+      utils.reflection.recent.invalidate();
       if (submittedForChildRef.current === activeChildId) {
         toast.success("הרפלקציה נשמרה! כל הכבוד!");
         setSubmitted(true);

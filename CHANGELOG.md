@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### תיקון: רפלקציה לא מתעדכנת ב-cache אחרי שמירה
+**קבצים:** `client/src/pages/Reflection.tsx`
+**פירוט:** ה-`onSuccess` של `reflection.save` לא ביצע `invalidate()` על `reflection.get` ו-`reflection.recent`. כשמשתמש שמר רפלקציה לילד א', עבר לילד ב' וחזר — הקאש הישן הציג טופס ריק במקום תצוגת ההצלחה. נוספו `utils.reflection.get.invalidate()` ו-`utils.reflection.recent.invalidate()`.
+
 ### תיקון: לוח זמנים ריק בהחלפת ילדים עם אותו updatedAt
 **קבצים:** `client/src/pages/ScheduleBuilder.tsx`
 **פירוט:** ה-effect לאתחול לוח הזמנים תלוי ב-`scheduleVersion` (מ-`updatedAt`), אבל לא ב-`activeChildId`. כששני ילדים חולקים אותו `updatedAt`, ה-effect לא רץ מחדש אחרי החלפת ילד — והמשתמש רואה לוח ריק. נוסף `activeChildId` למערך ה-dependencies של ה-effect.
