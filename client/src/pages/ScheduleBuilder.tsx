@@ -251,7 +251,7 @@ export default function ScheduleBuilder() {
     } else {
       setScheduleItems([]);
     }
-  }, [scheduleVersion, isLoading, dirty]);
+  }, [scheduleVersion, isLoading, dirty, activeChildId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

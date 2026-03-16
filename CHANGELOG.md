@@ -8,6 +8,10 @@
 
 ## [2026-03-16]
 
+### תיקון: לוח זמנים ריק בהחלפת ילדים עם אותו updatedAt
+**קבצים:** `client/src/pages/ScheduleBuilder.tsx`
+**פירוט:** ה-effect לאתחול לוח הזמנים תלוי ב-`scheduleVersion` (מ-`updatedAt`), אבל לא ב-`activeChildId`. כששני ילדים חולקים אותו `updatedAt`, ה-effect לא רץ מחדש אחרי החלפת ילד — והמשתמש רואה לוח ריק. נוסף `activeChildId` למערך ה-dependencies של ה-effect.
+
 ### תיקון: refetch אחרי toggle דורס שינויים מקומיים שלא נשמרו בלוח הזמנים
 **קבצים:** `client/src/pages/ScheduleBuilder.tsx`
 **פירוט:** כאשר המשתמש הוסיף/מחק/גרר פעילויות ואז סימן פעילות כהושלמה (toggle), ה-`onSuccess` של `toggleMutation` הפעיל `invalidate()` שגרם ל-effect לדרוס את השינויים המקומיים שלא נשמרו. נוסף דגל `dirty` שנדלק בהוספה (`addActivity`), מחיקה (`removeActivity`) וגרירה (`handleDragEnd`), ומונע מה-effect לסנכרן מהשרת כל עוד יש שינויים מקומיים. הדגל מתאפס בשמירה מוצלחת (`saveMutation.onSuccess`) ובהחלפת ילד פעיל.
