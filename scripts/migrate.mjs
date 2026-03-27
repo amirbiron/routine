@@ -33,6 +33,10 @@ const statements = [
     updatedAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE INDEX reminderSettings_userId_unique (userId)
   )`,
+  // ניקוי כפילויות לפני הוספת unique — שומר את הרשומה האחרונה לכל userId
+  `DELETE r1 FROM reminderSettings r1
+   INNER JOIN reminderSettings r2
+   ON r1.userId = r2.userId AND r1.id < r2.id`,
   // אם הטבלה כבר קיימת בלי unique — נוסיף בנפרד
   `ALTER TABLE reminderSettings ADD UNIQUE INDEX reminderSettings_userId_unique (userId)`,
 
@@ -53,7 +57,7 @@ for (const sql of statements) {
     console.log(`OK: ${sql.slice(0, 60)}...`);
   } catch (e) {
     // שגיאות צפויות — טבלה/עמודה/אינדקס כבר קיימים, או טבלה לא קיימת (fresh DB)
-    const expected = ["ER_DUP_KEYNAME", "ER_DUP_FIELDNAME", "ER_NO_SUCH_TABLE"];
+    const expected = ["ER_DUP_KEYNAME", "ER_DUP_FIELDNAME", "ER_NO_SUCH_TABLE", "ER_DUP_ENTRY"];
     if (expected.includes(e.code)) {
       console.log(`SKIP (${e.code}): ${sql.slice(0, 60)}...`);
     } else {
