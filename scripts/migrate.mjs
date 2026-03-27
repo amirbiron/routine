@@ -3,6 +3,10 @@ import mysql from "mysql2/promise";
 
 const conn = await mysql.createConnection(process.env.DATABASE_URL);
 
+// שגיאות צפויות גלובליות — טבלה/עמודה/אינדקס כבר קיימים, או טבלה לא קיימת (fresh DB)
+const GLOBAL_EXPECTED = ["ER_DUP_KEYNAME", "ER_DUP_FIELDNAME", "ER_NO_SUCH_TABLE"];
+
+// כל statement יכול להיות string פשוט או אובייקט עם שגיאות צפויות נוספות
 const statements = [
   // users — הוספת עמודות חדשות + unique constraint
   `ALTER TABLE users ADD COLUMN email varchar(320)`,
@@ -38,7 +42,8 @@ const statements = [
    INNER JOIN reminderSettings r2
    ON r1.userId = r2.userId AND r1.id < r2.id`,
   // אם הטבלה כבר קיימת בלי unique — נוסיף בנפרד
-  `ALTER TABLE reminderSettings ADD UNIQUE INDEX reminderSettings_userId_unique (userId)`,
+  // ER_DUP_ENTRY מותר רק כאן — אם הניקוי לא הספיק (edge case) עדיף לדלג מאשר לקרוס
+  { sql: `ALTER TABLE reminderSettings ADD UNIQUE INDEX reminderSettings_userId_unique (userId)`, extraExpected: ["ER_DUP_ENTRY"] },
 
   // tokenEvents
   `CREATE TABLE IF NOT EXISTS tokenEvents (
@@ -51,13 +56,13 @@ const statements = [
   )`,
 ];
 
-for (const sql of statements) {
+for (const entry of statements) {
+  const sql = typeof entry === "string" ? entry : entry.sql;
+  const expected = typeof entry === "string" ? GLOBAL_EXPECTED : [...GLOBAL_EXPECTED, ...entry.extraExpected];
   try {
     await conn.query(sql);
     console.log(`OK: ${sql.slice(0, 60)}...`);
   } catch (e) {
-    // שגיאות צפויות — טבלה/עמודה/אינדקס כבר קיימים, או טבלה לא קיימת (fresh DB)
-    const expected = ["ER_DUP_KEYNAME", "ER_DUP_FIELDNAME", "ER_NO_SUCH_TABLE", "ER_DUP_ENTRY"];
     if (expected.includes(e.code)) {
       console.log(`SKIP (${e.code}): ${sql.slice(0, 60)}...`);
     } else {
